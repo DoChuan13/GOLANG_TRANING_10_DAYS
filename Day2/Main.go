@@ -132,7 +132,7 @@ func main() {
 	employeeSalary2["steve"] = 12000
 
 	fmt.Println("Map with nil value after initialized===>:", employeeSalary2)
-	fmt.Println("=================Slice - Modifier=================")
+	fmt.Println("=================Range=================")
 	forArray := []int{1, 2, 3, 4, 5, 6, 7, 8}
 	for index, value := range forArray {
 		fmt.Println("Index and value in For Range", index, value)
