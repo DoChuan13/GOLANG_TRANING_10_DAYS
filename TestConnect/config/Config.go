@@ -32,7 +32,3 @@ func Close(db *sql.DB) {
 	_ = db.Close()
 	fmt.Println("Close Database Success!!!")
 }
-
-func TestConnect() {
-	_ = Connection()
-}

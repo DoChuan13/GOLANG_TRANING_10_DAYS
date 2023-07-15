@@ -1,6 +1,7 @@
 package main
 
 import (
+	"TestConnect/config"
 	"fmt"
 )
 
@@ -9,7 +10,7 @@ func main() {
 	//database.CreateTables()
 
 	fmt.Println("input Number")
-	demo := InputFloat()
+	demo := config.InputFloat()
 	fmt.Println("Result =>", demo)
 
 }
