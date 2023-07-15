@@ -1,11 +1,15 @@
 package main
 
 import (
-	"TestConnect/config"
-	"TestConnect/database"
+	"fmt"
 )
 
 func main() {
-	config.Connection()
-	database.CreateTables()
+	//config.Connection()
+	//database.CreateTables()
+
+	fmt.Println("input Number")
+	demo := InputFloat()
+	fmt.Println("Result =>", demo)
+
 }
