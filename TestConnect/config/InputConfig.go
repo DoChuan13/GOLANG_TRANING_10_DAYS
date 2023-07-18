@@ -42,10 +42,10 @@ func InputInteger() int {
 }
 
 func InputFloat() float64 {
-	fmt.Println(NumberInvalid)
 	input := input()
 	value, err := strconv.ParseFloat(input, 64)
 	if err != nil {
+		fmt.Println(NumberInvalid)
 		return InputFloat()
 	}
 	return value

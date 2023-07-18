@@ -3,18 +3,24 @@ package config
 import (
 	"fmt"
 	"os"
+	"strings"
 )
 
 var FilePath = "Practice/ReadWrite/test.csv"
 
-func ReadFile(filePath string) {
+func ReadFile(filePath string) []string {
 	f, err := os.ReadFile(filePath)
 	if err != nil {
 		fmt.Println("Read file failed==>", err)
-		return
+		//return []string{}
 	}
-	fmt.Println("Content File==>")
-	fmt.Println(string(f))
+	//fmt.Println("Content File==>")
+	//fmt.Println(string(f))
+	pre := strings.Split(string(f), "\n")
+	if pre[len(pre)-1] == "" {
+		return pre[:(len(pre) - 1)]
+	}
+	return pre
 }
 
 func OverWriteFile(filePath string, content []string) {
