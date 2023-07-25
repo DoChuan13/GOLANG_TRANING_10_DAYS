@@ -31,7 +31,6 @@ func HandleGetPostExample() {
 }
 
 func returnHtml(w http.ResponseWriter, r *http.Request) {
-
 	if r.URL.Path == "/get/demo" && r.Method == "GET" {
 		getReturnHtml(w, r)
 		return
