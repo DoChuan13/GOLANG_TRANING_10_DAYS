@@ -6,20 +6,23 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type mysql struct {
+	config  *model.Server
 	clients map[string]*sql.DB
 }
 
 // NewDBHandler constructor
-func NewDBHandler(config *model.Server) (IDBHandler, error) {
+func NewDBHandler(cfg *model.Server) (IDBHandler, error) {
 	return &mysql{
+		config:  cfg,
 		clients: make(map[string]*sql.DB),
 	}, nil
 }
 
-func (c mysql) InitConnection(config *model.KafkaDB, endpoint, dbName string) error {
+func (c mysql) InitConnection(config *model.Server, endpoint, dbName string) error {
 	key := endpoint + model.StrokeCharacter + dbName
 	_, isExists := c.clients[key]
 	if isExists {
@@ -59,7 +62,7 @@ func (c mysql) Exec(ctx context.Context, endpoint, dbName, sql string, args []in
 	_, err = tx.ExecContext(ctx, sql, args...)
 	if err != nil {
 		_ = tx.Rollback()
-		return fmt.Errorf("transaction failed")
+		return fmt.Errorf("transaction failed ===>%s", err)
 
 	}
 	err = tx.Commit()

@@ -21,6 +21,8 @@ const (
 	TimeFormatWithMicrosecond = "15:04:05.000000"
 	// QuoteCharacter quote character
 	QuoteCharacter = "`"
+	// ApostropheCharacter quote character
+	ApostropheCharacter = "'"
 	// SpaceCharacter character
 	SpaceCharacter = " "
 	// MinusCharacter minus sign character

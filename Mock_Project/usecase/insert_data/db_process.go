@@ -14,10 +14,10 @@ type Server struct {
 	wg           *sync.WaitGroup
 }
 
-func NewService(cfg *model.Server, dbRepository repository.IDBRepository) IDB {
+func NewDBService(cfg *model.Server, dbRepository *repository.IDBRepository) IDB {
 	return &Server{
 		config:       cfg,
-		dbRepository: dbRepository,
+		dbRepository: *dbRepository,
 		wg:           new(sync.WaitGroup),
 	}
 }
@@ -35,11 +35,9 @@ func (s Server) StartDBProcess(ctx context.Context, collection *[]model.ObjectPr
 }
 
 func (s Server) processInsertData(ctx context.Context, collect model.ObjectProcess) {
-	err := s.dbRepository.ImportData(
-		ctx, collect, collect.TableName, collect.EndPoint, collect.DBName, []interface{}{},
-	)
+	err := s.dbRepository.InsertData(ctx, collect, []interface{}{})
 	if err != nil {
-		fmt.Println("Error")
+		fmt.Println(err)
 	}
 	s.wg.Done()
 }

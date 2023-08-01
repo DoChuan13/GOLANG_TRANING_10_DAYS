@@ -6,9 +6,9 @@ import (
 )
 
 type IDBRepository interface {
-	ImportData(
-		ctx context.Context, object model.ObjectProcess, tableName, endpoint, dbName string, args []interface{},
-	) error
+	InitConnection(config *model.Server, endpoint, dbName string) error
+	CreateNewTable(ctx context.Context, object model.ObjectProcess) error
+	InsertData(ctx context.Context, objectProcess model.ObjectProcess, args []interface{}) error
 	Close() error
 }
 

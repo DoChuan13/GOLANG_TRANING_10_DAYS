@@ -3,7 +3,6 @@ package kafka_process
 import (
 	"Mock_Project/infrastructure/repository"
 	"Mock_Project/model"
-	"encoding/json"
 	"fmt"
 	"reflect"
 	"sort"
@@ -19,7 +18,7 @@ type Server struct {
 	mu              *sync.Mutex
 }
 
-func NewService(cfg *model.Server, kafkaRepository *repository.IKafkaRepository) IKafka {
+func NewKafkaService(cfg *model.Server, kafkaRepository *repository.IKafkaRepository) IKafka {
 	return &Server{
 		config:          cfg,
 		kafkaRepository: *kafkaRepository,
@@ -35,10 +34,7 @@ func (s Server) StartKafkaProcess(rows []string) ([]model.ObjectProcess, error) 
 		topic := splitRow[2] + splitRow[3]
 		s.saveListTopic(topic)
 		s.wg.Add(1)
-		go func(topic, content string) {
-			_ = s.kafkaRepository.ProducerData(s.config.Broker, topic, s.config.Partition, content)
-			s.wg.Done()
-		}(topic, row)
+		go s.producerProcess(topic, row)
 	}
 	s.wg.Wait()
 
@@ -46,34 +42,11 @@ func (s Server) StartKafkaProcess(rows []string) ([]model.ObjectProcess, error) 
 	var collection []model.ObjectProcess
 	for _, topic := range s.config.Topics {
 		s.wg.Add(1)
-
-		go func(topic string, collection *[]model.ObjectProcess) {
-			values, err := s.kafkaRepository.ConsumerData(s.config.Broker, topic, s.config.Partition)
-			if err != nil {
-				return
-			}
-			s.mergeTableGroup(collection, values)
-			s.wg.Done()
-		}(topic, &collection)
-
+		go s.consumerProcess(topic, &collection)
 	}
 	s.wg.Wait()
 
-	result := s.sortValueByTime(collection)
-	for i := 0; i < len(result); i++ {
-		for j := 0; j < len(result[i].Value); j++ {
-			curDate := formatDate(time.Now())
-			curTime := formatTime(time.Now())
-			result[i].Value[j].TKSERIALNUMBER = 1
-			result[i].Value[j].TKZXD = curDate
-			result[i].Value[j].TKTIM = curTime
-			if j > 0 {
-				if curDate == result[i].Value[j-1].TKZXD && curTime == result[i].Value[j-1].TKTIM {
-					result[i].Value[j].TKSERIALNUMBER = result[i].Value[j-1].TKSERIALNUMBER + 1
-				}
-			}
-		}
-	}
+	result := s.prepareDBList(collection)
 
 	err := s.kafkaRepository.ClearData(s.config)
 	if err != nil {
@@ -81,6 +54,33 @@ func (s Server) StartKafkaProcess(rows []string) ([]model.ObjectProcess, error) 
 	}
 
 	return result, nil
+}
+
+func (s Server) saveListTopic(newTopic string) {
+	existed := false
+	for i := 0; i < len(s.config.Topics); i++ {
+		if s.config.Topics[i] == newTopic {
+			existed = true
+			break
+		}
+	}
+	if !existed {
+		s.config.Topics = append(s.config.Topics, newTopic)
+	}
+}
+
+func (s Server) producerProcess(topic string, content string) {
+	defer s.wg.Done()
+	_ = s.kafkaRepository.ProducerData(s.config.Broker, topic, s.config.Partition, content)
+}
+
+func (s Server) consumerProcess(topic string, collection *[]model.ObjectProcess) {
+	defer s.wg.Done()
+	values, err := s.kafkaRepository.ConsumerData(s.config.Broker, topic, s.config.Partition)
+	if err != nil {
+		return
+	}
+	s.mergeTableGroup(collection, values)
 }
 
 func (s Server) mergeTableGroup(collection *[]model.ObjectProcess, row []interface{}) {
@@ -103,8 +103,8 @@ func (s Server) mergeTableGroup(collection *[]model.ObjectProcess, row []interfa
 		} else {
 			object := model.ObjectProcess{
 				TableName: tableName,
-				EndPoint:  "3306",
-				DBName:    "",
+				EndPoint:  "127.0.0.1",
+				DBName:    "demo",
 				Value:     []model.TargetObject{targetObject},
 			}
 			objectList = append(objectList, object)
@@ -114,25 +114,38 @@ func (s Server) mergeTableGroup(collection *[]model.ObjectProcess, row []interfa
 	s.mu.Unlock()
 }
 
-func (s Server) sortValueByTime(collection []model.ObjectProcess) []model.ObjectProcess {
+func (s Server) prepareDBList(collection []model.ObjectProcess) []model.ObjectProcess {
 	for i := 0; i < len(collection); i++ {
 		s.wg.Add(1)
-		go s.sortItem(&collection[i])
+		go s.sortItems(&collection[i])
 	}
-
 	s.wg.Wait()
+	for i := 0; i < len(collection); i++ {
+		for j := 0; j < len(collection[i].Value); j++ {
+			curDate := formatDate(time.Now())
+			curTime := formatTime(time.Now())
+			collection[i].Value[j].TKSERIALNUMBER = 1
+			collection[i].Value[j].TKZXD = curDate
+			collection[i].Value[j].TKTIM = curTime
+			if j > 0 {
+				if collection[i].Value[j].QCD == collection[i].Value[j-1].QCD && curDate == collection[i].Value[j-1].TKZXD && curTime == collection[i].Value[j-1].TKTIM {
+					collection[i].Value[j].TKSERIALNUMBER = collection[i].Value[j-1].TKSERIALNUMBER + 1
+				}
+			}
+		}
+	}
 	return collection
 }
 
-func (s Server) sortItem(collect *model.ObjectProcess) {
+func (s Server) sortItems(collect *model.ObjectProcess) {
+	defer s.wg.Done()
 	compare := func(i, j int) bool {
-		return compare(i, j, collect.Value)
+		return compareObject(i, j, collect.Value)
 	}
 	sort.Slice(collect.Value, compare)
-	s.wg.Done()
 }
 
-func compare(i, j int, value []model.TargetObject) bool {
+func compareObject(i, j int, value []model.TargetObject) bool {
 	if value[i].QCD != value[j].QCD {
 		return strings.Compare(value[i].QCD, value[j].QCD) < 0
 	}
@@ -141,19 +154,7 @@ func compare(i, j int, value []model.TargetObject) bool {
 
 func convertToObject(value []string) (tableName string, targetObject model.TargetObject) {
 	table := value[2] + model.UnderScoreCharacter + value[3] + model.UnderScoreCharacter + value[4]
-	tempObject := model.SourceObject{}
-	temp, err := json.Marshal(tempObject)
-	if err != nil {
-		return
-	}
-	tempStr := strings.Trim(string(temp), "{}")
-	nameArray := strings.Split(tempStr, ":\"\",")
-	objectMap := make(map[string]string)
-
-	for index, name := range nameArray {
-		key := strings.Trim(name, "\"")
-		objectMap[key] = value[index]
-	}
+	objectMap := generateObjectMap(value)
 
 	object := model.TargetObject{}
 	val := reflect.ValueOf(&object).Elem()
@@ -169,17 +170,16 @@ func convertToObject(value []string) (tableName string, targetObject model.Targe
 	return table, object
 }
 
-func (s Server) saveListTopic(newTopic string) {
-	existed := false
-	for i := 0; i < len(s.config.Topics); i++ {
-		if s.config.Topics[i] == newTopic {
-			existed = true
-			break
-		}
+func generateObjectMap(value []string) map[string]string {
+	objectMap := make(map[string]string)
+	var object model.SourceObject
+	val := reflect.ValueOf(object)
+	typ := reflect.TypeOf(object)
+	for i := 0; i < val.NumField(); i++ {
+		key := typ.Field(i).Name
+		objectMap[key] = value[i]
 	}
-	if !existed {
-		s.config.Topics = append(s.config.Topics, newTopic)
-	}
+	return objectMap
 }
 
 func formatTime(time time.Time) string {

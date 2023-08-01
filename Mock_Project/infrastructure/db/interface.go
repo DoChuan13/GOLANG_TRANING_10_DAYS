@@ -6,7 +6,7 @@ import (
 )
 
 type IDBHandler interface {
-	InitConnection(config *model.KafkaDB, endpoint, dbName string) error
+	InitConnection(config *model.Server, endpoint, dbName string) error
 	Exec(ctx context.Context, endpoint, dbName, sql string, args []interface{}) error
 	Close() error
 }

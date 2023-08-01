@@ -1,19 +1,22 @@
 package repository
 
 import (
+	"Mock_Project/infrastructure"
 	"Mock_Project/infrastructure/kafka"
 	"Mock_Project/model"
 	"github.com/IBM/sarama"
 )
 
 type kafkaRepository struct {
+	config      *model.Server
 	kafkaClient kafka.IKafkaHandler
 }
 
 // NewKafkaRepository repository constructor
-func NewKafkaRepository(kafkaClient kafka.IKafkaHandler) IKafkaRepository {
+func NewKafkaRepository(infra *infrastructure.Infra, cfg *model.Server) IKafkaRepository {
 	return &kafkaRepository{
-		kafkaClient: kafkaClient,
+		config:      cfg,
+		kafkaClient: infra.KafkaHandler,
 	}
 }
 
