@@ -1,5 +1,11 @@
 package model
 
+type KafkaProcess struct {
+	Topic    string
+	Message  string
+	ListRows []string
+}
+
 type ObjectProcess struct {
 	TableName string
 	EndPoint  string

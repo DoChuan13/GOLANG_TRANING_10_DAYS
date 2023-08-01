@@ -16,6 +16,7 @@ type kafka struct {
 func NewKafkaHandler(cfg *model.KafkaSystem) (IKafkaHandler, error) {
 	kafkaConfig := sarama.NewConfig()
 	kafkaConfig.Producer.RequiredAcks = sarama.WaitForAll
+	kafkaConfig.Producer.MaxMessageBytes = 10e6
 	kafkaConfig.Producer.Retry.Max = 5
 	kafkaConfig.Producer.Return.Successes = true
 	return &kafka{

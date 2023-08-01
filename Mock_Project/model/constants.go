@@ -13,6 +13,8 @@ const (
 	EnterLineCR = "\r"
 	// TabCharacter tab character
 	TabCharacter = "\t"
+	// DoubleQuote tab character
+	DoubleQuote = "\""
 	// DateFormatWithoutStroke format only date without stroke
 	DateFormatWithoutStroke = "20220102"
 	// DateFormatWithStroke format only date without stroke

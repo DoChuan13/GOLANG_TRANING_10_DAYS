@@ -20,7 +20,6 @@ func initLog() {
 
 func main() {
 	file.FakeAllData()
-	fmt.Println("Ini ==> Created File")
 	config, err := config2.InitConfig()
 	if err != nil {
 		fmt.Println(err)
