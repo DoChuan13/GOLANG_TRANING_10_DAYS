@@ -3,6 +3,7 @@ package main
 import (
 	"Mock_Project/api"
 	config2 "Mock_Project/config"
+	"Mock_Project/file"
 	"Mock_Project/infrastructure"
 	"context"
 	"fmt"
@@ -18,6 +19,8 @@ func initLog() {
 }
 
 func main() {
+	file.FakeAllData()
+	fmt.Println("Ini ==> Created File")
 	config, err := config2.InitConfig()
 	if err != nil {
 		fmt.Println(err)

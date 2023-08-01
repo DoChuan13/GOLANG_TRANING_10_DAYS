@@ -26,11 +26,14 @@ func (s Server) StartDBProcess(ctx context.Context, collection *[]model.ObjectPr
 	if len(*collection) == 0 {
 		return fmt.Errorf("value is Empty")
 	}
+	count := 0
 	for _, collect := range *collection {
 		s.wg.Add(1)
+		count += len(collect.Value)
 		go s.processInsertData(ctx, collect)
 	}
 	s.wg.Wait()
+	fmt.Println("Total Record ===> ", count)
 	return nil
 }
 

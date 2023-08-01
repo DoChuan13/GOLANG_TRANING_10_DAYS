@@ -14,7 +14,7 @@ const (
 	// TabCharacter tab character
 	TabCharacter = "\t"
 	// DateFormatWithoutStroke format only date without stroke
-	DateFormatWithoutStroke = "20060102"
+	DateFormatWithoutStroke = "20220102"
 	// DateFormatWithStroke format only date without stroke
 	DateFormatWithStroke = "2006-01-02"
 	// TimeFormatWithMicrosecond time format with micro second

@@ -40,12 +40,12 @@ func (k kafka) ProducerData(broker []string, topic string, partition int32, cont
 		Value:     sarama.StringEncoder(content),
 	}
 
-	partition, offset, err := producer.SendMessage(msg)
+	partition, _, err = producer.SendMessage(msg)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Message sent to partition %d at offset %d\n", partition, offset)
+	/*fmt.Printf("Message sent to partition %d at offset %d\n", partition, offset)*/
 	return nil
 }
 

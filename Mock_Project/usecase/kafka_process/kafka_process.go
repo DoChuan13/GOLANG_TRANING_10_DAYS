@@ -16,6 +16,7 @@ type Server struct {
 	kafkaRepository repository.IKafkaRepository
 	wg              *sync.WaitGroup
 	mu              *sync.Mutex
+	collectCh       chan model.ObjectProcess
 }
 
 func NewKafkaService(cfg *model.Server, kafkaRepository *repository.IKafkaRepository) IKafka {
@@ -24,6 +25,7 @@ func NewKafkaService(cfg *model.Server, kafkaRepository *repository.IKafkaReposi
 		kafkaRepository: *kafkaRepository,
 		wg:              new(sync.WaitGroup),
 		mu:              new(sync.Mutex),
+		collectCh:       make(chan model.ObjectProcess, 1),
 	}
 }
 
@@ -39,6 +41,7 @@ func (s Server) StartKafkaProcess(rows []string) ([]model.ObjectProcess, error) 
 	s.wg.Wait()
 
 	//Consumer All Messages & Return All Data
+	s.collectCh = make(chan model.ObjectProcess, len(s.config.Topics))
 	var collection []model.ObjectProcess
 	for _, topic := range s.config.Topics {
 		s.wg.Add(1)

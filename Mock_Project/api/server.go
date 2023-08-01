@@ -10,6 +10,7 @@ import (
 	"Mock_Project/usecase/kafka_process"
 	"Mock_Project/usecase/read_data"
 	"context"
+	"fmt"
 )
 
 type Server struct {
@@ -27,7 +28,8 @@ func New(infra *infrastructure.Infra, cfg *model.Server) *Server {
 
 func (s *Server) Start(ctx context.Context) error {
 	//Config
-	var pathFile = "file/demo.csv"
+	//var pathFile = "file/demo.csv"
+	var pathFile = "file/faker/A0001&0T.csv"
 	kafkaDB := model.KafkaDB{
 		Port:              3306,
 		User:              "root",
@@ -35,8 +37,8 @@ func (s *Server) Start(ctx context.Context) error {
 		MaxOpenConnection: 10,
 		MaxIdleConnection: 10,
 		DriverName:        "mysql",
-		RetryTimes:        3000,
-		RetryWaitMs:       3000,
+		RetryTimes:        10000,
+		RetryWaitMs:       10000,
 	}
 	kafkaSystem := model.KafkaSystem{
 		Broker:    []string{"0.0.0.0:9093"},
@@ -51,6 +53,7 @@ func (s *Server) Start(ctx context.Context) error {
 	//Read File Process
 	fileService := read_data.NewService()
 	rows, err := fileService.ReadFileProcess(pathFile)
+	fmt.Println("Step 1: Read File Complete")
 	if err != nil {
 		return err
 	}
@@ -64,6 +67,7 @@ func (s *Server) Start(ctx context.Context) error {
 	//Start Kafka Service & Process
 	kafkaService := kafka_process.NewKafkaService(&cfg, &kafkaRepository)
 	objectProcessList, err := kafkaService.StartKafkaProcess(rows)
+	fmt.Println("Step 2: Kafka Process Complete")
 	if err != nil {
 		return err
 	}
@@ -71,6 +75,7 @@ func (s *Server) Start(ctx context.Context) error {
 	//Start Fetch Database Service & Process
 	fetchService := fetch_db.NewFetchService(&cfg, &dbRepository)
 	err = fetchService.StartFetchDB(ctx, &objectProcessList)
+	fmt.Println("Step 3: Fetch DB Complete")
 	if err != nil {
 		return err
 	}
@@ -78,6 +83,7 @@ func (s *Server) Start(ctx context.Context) error {
 	//Start Database Service & Process
 	dbService := insert_data.NewDBService(&cfg, &dbRepository)
 	err = dbService.StartDBProcess(ctx, &objectProcessList)
+	fmt.Println("Step 4: Import DB Complete")
 	if err != nil {
 		return err
 	}
