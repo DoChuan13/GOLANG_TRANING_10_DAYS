@@ -31,7 +31,8 @@ func (s *Server) Start(ctx context.Context) error {
 	//Config
 	var mkdirPath = "file"
 	var fileName = "ListValue.csv"
-	folder := "/Users/Chuan/Desktop/demo/temp/"
+	folder := "/Users/Chuan/Desktop/demo/temp"
+	//folder := "/var/lib/mysql-files/temp/target"
 	kafkaDB := model.KafkaDB{
 		Port:              3306,
 		User:              "root",

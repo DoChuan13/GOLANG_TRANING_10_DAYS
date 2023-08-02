@@ -41,6 +41,12 @@ func (s Server) StartKafkaProcess(rows []string) ([]model.ObjectProcess, error) 
 		countElement += size
 
 		for i := 0; i < size; i++ {
+			//Detect Error in Goroutine
+			err := s.breakError()
+			if err != nil {
+				return nil, err
+			}
+
 			start := i * block
 			end := (i + 1) * block
 			if end > len(kafkaObj.ListRows) {
@@ -61,24 +67,21 @@ func (s Server) StartKafkaProcess(rows []string) ([]model.ObjectProcess, error) 
 	defer func() {
 		_ = s.kafkaRepository.ClearData(s.config)
 	}()
-	err := s.breakError()
-	if err != nil {
-		return nil, err
-	}
 
 	//Consumer All Messages & Return All Data
 	s.collect = make(chan model.ObjectProcess, len(s.config.Topics))
 	var collection []model.ObjectProcess
 	for _, topic := range s.config.Topics {
+		//Detect Error in Goroutine
+		err := s.breakError()
+		if err != nil {
+			return nil, err
+		}
+
 		s.wg.Add(1)
 		go s.consumerProcess(topic, &collection)
 	}
 	s.wg.Wait()
-
-	err = s.breakError()
-	if err != nil {
-		return nil, err
-	}
 
 	count := 0
 	for _, collect := range collection {
@@ -143,15 +146,16 @@ func (s Server) saveListTopic(newTopic string) {
 }
 
 func (s Server) producerProcess(topic string, content string) {
+	defer s.wg.Done()
 	err := s.kafkaRepository.ProducerData(s.config.Broker, topic, s.config.Partition, content)
 	if err != nil {
 		s.err <- err
 		fmt.Println("Producer Error =>: ", err)
+		return
 	}
 	s.mu.Lock()
 	totalCount++
 	s.mu.Unlock()
-	s.wg.Done()
 }
 
 func (s Server) consumerProcess(topic string, collection *[]model.ObjectProcess) {

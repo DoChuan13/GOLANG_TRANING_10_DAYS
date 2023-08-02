@@ -19,7 +19,8 @@ type Server struct {
 	config       *model.Server
 	dbRepository repository.IDBRepository
 	wg           *sync.WaitGroup
-	path         string
+	tempPath     string
+	err          chan error
 }
 
 func NewDBService(cfg *model.Server, dbRepository *repository.IDBRepository, path string) IDB {
@@ -27,7 +28,8 @@ func NewDBService(cfg *model.Server, dbRepository *repository.IDBRepository, pat
 		config:       cfg,
 		dbRepository: *dbRepository,
 		wg:           new(sync.WaitGroup),
-		path:         path,
+		tempPath:     path,
+		err:          make(chan error, 1),
 	}
 }
 
@@ -37,14 +39,21 @@ func (s Server) StartDBProcess(ctx context.Context, collection *[]model.ObjectPr
 	}
 	prepareValue := s.prepareDBList(*collection)
 
-	//Create Temp Folder
-	err := os.MkdirAll(s.path, 0777)
+	////Create Temp Folder
+	fileService := read_data.NewService(s.tempPath, "")
+	err := fileService.CreateParentFolder()
 	if err != nil {
 		return err
 	}
 
 	count := 0
 	for _, collect := range prepareValue {
+		//Detect Error in Goroutine
+		err := s.breakError()
+		if err != nil {
+			return err
+		}
+
 		s.wg.Add(1)
 		count += len(collect.Value)
 		go s.processExportImport(ctx, collect)
@@ -54,7 +63,7 @@ func (s Server) StartDBProcess(ctx context.Context, collection *[]model.ObjectPr
 	//Remove All Temp Folder
 	defer func(name string) {
 		_ = os.RemoveAll(name)
-	}(s.path)
+	}(s.tempPath)
 
 	fmt.Println("Total Record ===> ", count)
 	return nil
@@ -62,12 +71,14 @@ func (s Server) StartDBProcess(ctx context.Context, collection *[]model.ObjectPr
 
 func (s Server) processExportImport(ctx context.Context, collect model.ObjectProcess) {
 	defer s.wg.Done()
-	file := s.path + collect.TableName
+	file := s.tempPath + model.StrokeCharacter + collect.TableName
 
 	//Get All Record from Table
 	err := s.dbRepository.ExportDataFiles(file, ctx, collect)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Export Error ==>", err)
+		s.err <- err
+		return
 	}
 
 	//Add New Records to Temp Files
@@ -78,23 +89,38 @@ func (s Server) processExportImport(ctx context.Context, collect model.ObjectPro
 	}
 
 	//Convert Object to Strings
-	fileService := read_data.NewService(s.path, collect.TableName)
+	fileService := read_data.NewService(s.tempPath, collect.TableName)
 	err = fileService.InsertCurrentFiles(&record)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Insert New Data Error ==>", err)
+		s.err <- err
+		return
 	}
 
 	//Truncate Remote all Current Data
 	err = s.dbRepository.ClearData(ctx, collect)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Truncate Error ==>", err)
+		s.err <- err
+		return
 	}
 
 	//Import New Value to Table
 	err = s.dbRepository.ImportDataFiles(file, ctx, collect)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Println("Import Error ==>", err)
+		s.err <- err
+		return
 	}
+}
+
+func (s Server) breakError() error {
+	select {
+	case err := <-s.err:
+		return err
+	default:
+	}
+	return nil
 }
 
 //func (s Server) processInsertData(ctx context.Context, collect model.ObjectProcess) {

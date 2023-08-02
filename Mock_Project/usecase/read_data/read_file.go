@@ -39,8 +39,7 @@ func (s Service) ReadFileProcess() ([]string, error) {
 }
 
 func (s Service) InsertCurrentFiles(rows *[]string) error {
-	filePath := s.parentPath + model.StrokeCharacter + s.name
-	file, err := openFile(filePath)
+	file, err := s.openFile()
 	if err != nil {
 		return err
 	}
@@ -54,22 +53,30 @@ func (s Service) InsertCurrentFiles(rows *[]string) error {
 	return nil
 }
 
-func openFile(filePath string) (*os.File, error) {
-	_, info := os.Stat(filePath)
+func (s Service) CreateParentFolder() error {
+	err := os.MkdirAll(s.parentPath, 0755)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s Service) openFile() (*os.File, error) {
+	_, info := os.Stat(s.filePath)
 	if info != nil {
 		fmt.Println(info)
 		fmt.Println("New file is created!!!")
-		err := os.Mkdir(filePath, 0755)
-		if err != nil {
-			return nil, err
-		}
-		file, err := os.Create(filePath)
+		_ = os.Mkdir(s.parentPath, 0755)
+		//if err != nil {
+		//	return nil, err
+		//}
+		file, err := os.Create(s.filePath)
 		if err != nil {
 			return nil, err
 		}
 		return file, nil
 	}
-	file, _ := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0644)
+	file, _ := os.OpenFile(s.filePath, os.O_WRONLY|os.O_APPEND, 0644)
 	return file, nil
 }
 
