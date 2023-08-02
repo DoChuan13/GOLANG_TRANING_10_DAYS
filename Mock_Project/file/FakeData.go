@@ -2,7 +2,6 @@ package file
 
 import (
 	"Mock_Project/model"
-	"encoding/csv"
 	"fmt"
 	"math/rand"
 	"os"
@@ -19,10 +18,10 @@ type Code struct {
 }
 
 const (
-	numRecords = 10000
+	numRecords = 100
 )
 
-func FakeAllData() {
+func FakeAllData() error {
 	code1 := Code{name: "A0001&0/T", first: "A", last: "T"}
 	code2 := Code{name: "A0002&0/T", first: "A", last: "T"}
 	code3 := Code{name: "A0001&0/F", first: "A", last: "F"}
@@ -33,22 +32,14 @@ func FakeAllData() {
 	code8 := Code{name: "A0005&0/V", first: "A", last: "V"}
 
 	codeList := []Code{code1, code2, code3, code4, code5, code6, code7, code8}
-	fakerData(codeList)
+	return fakerData(codeList)
 }
 
-func fakerData(codeList []Code) {
+func fakerData(codeList []Code) error {
+	path := "file/ListValue.csv"
 	// Tạo file CSV
-	file, err := os.Create("file/faker/ListValue.csv")
-	if err != nil {
-		fmt.Println("Error when create file:", err)
-		return
-	}
-	defer func(file *os.File) {
-		_ = file.Close()
-	}(file)
-
-	writer := csv.NewWriter(file)
-	defer writer.Flush()
+	file := OpenFile(path)
+	defer CloseFile(file)
 
 	for _, code := range codeList {
 		for i := 0; i < numRecords; i++ {
@@ -61,9 +52,13 @@ func fakerData(codeList []Code) {
 
 			// Ghi dữ liệu vào file CSV
 			str := convertValues(record)
-			_ = writer.Write([]string{str})
+			err := WriteFile(file, str)
+			if err != nil {
+				return err
+			}
 		}
 	}
+	return nil
 }
 
 func convertValues(source model.SourceObject) string {
@@ -100,4 +95,28 @@ func getRandomTime() string {
 	randomMinute := rand.Intn(60)
 
 	return fmt.Sprintf("%02d:%02d", randomHour, randomMinute)
+}
+
+func OpenFile(filePath string) *os.File {
+	_, info := os.Stat(filePath)
+	if info != nil {
+		fmt.Println(info)
+		fmt.Println("New file is created!!!")
+		file, _ := os.Create(filePath)
+		return file
+	}
+	file, _ := os.OpenFile(filePath, os.O_WRONLY|os.O_APPEND, 0644)
+	return file
+}
+
+func WriteFile(file *os.File, content string) error {
+	_, err := fmt.Fprintln(file, content)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func CloseFile(f *os.File) {
+	_ = f.Close()
 }

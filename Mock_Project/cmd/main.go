@@ -19,7 +19,11 @@ func initLog() {
 }
 
 func main() {
-	file.FakeAllData()
+	err := file.FakeAllData()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 	config, err := config2.InitConfig()
 	if err != nil {
 		fmt.Println(err)

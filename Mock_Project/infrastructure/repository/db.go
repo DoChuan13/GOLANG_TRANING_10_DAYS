@@ -10,8 +10,13 @@ import (
 	"strconv"
 )
 
-const baseInsertIntoTable = "insert into %s.%s %s values %s;"
-const baseCreateTable = "create table if not exists %s.%s (%s)"
+const (
+	baseInsertIntoTable = "insert into %s.%s %s values %s;"
+	baseCreateTable     = "create table if not exists %s.%s (%s)"
+	baseLoadImportFiles = "load data infile '%s' into table %s.%s fields terminated by ',' lines terminated by '\n';"
+	baseLoadExportFiles = "select * into outfile '%s' fields terminated by ',' lines terminated by '\n' from %s.%s;"
+	baseQueryClearData  = "truncate table %s.%s;"
+)
 
 type dbRepository struct {
 	config *model.Server
@@ -29,10 +34,28 @@ func (r dbRepository) InitConnection(config *model.Server, endpoint, dbName stri
 	return r.db.InitConnection(config, endpoint, dbName)
 }
 
-func (r dbRepository) CreateNewTable(ctx context.Context, objectProcess model.ObjectProcess) error {
+func (r dbRepository) CreateNewTable(ctx context.Context, object model.ObjectProcess) error {
 	fields := generateFields()
-	query := fmt.Sprintf(baseCreateTable, objectProcess.DBName, objectProcess.TableName, fields)
-	err := r.db.Exec(ctx, objectProcess.EndPoint, objectProcess.DBName, query, []interface{}{})
+	query := fmt.Sprintf(baseCreateTable, object.DBName, object.TableName, fields)
+	err := r.db.Exec(ctx, object.EndPoint, object.DBName, query, []interface{}{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r dbRepository) ImportDataFiles(file string, ctx context.Context, object model.ObjectProcess) error {
+	query := fmt.Sprintf(baseLoadImportFiles, file, object.DBName, object.TableName)
+	err := r.db.Exec(ctx, object.EndPoint, object.DBName, query, []interface{}{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (r dbRepository) ExportDataFiles(file string, ctx context.Context, object model.ObjectProcess) error {
+	query := fmt.Sprintf(baseLoadExportFiles, file, object.DBName, object.TableName)
+	err := r.db.Exec(ctx, object.EndPoint, object.DBName, query, []interface{}{})
 	if err != nil {
 		return err
 	}
@@ -45,8 +68,8 @@ func (r dbRepository) InsertData(
 	if len(objectProcess.Value) == 0 {
 		return fmt.Errorf("value is Empty")
 	}
-	columns := ConvertColumns(objectProcess.Value[0])
-	values := ConvertValues(objectProcess.Value)
+	columns := convertColumns(objectProcess.Value[0])
+	values := convertValues(objectProcess.Value)
 	query := fmt.Sprintf(baseInsertIntoTable, objectProcess.DBName, objectProcess.TableName, columns, values)
 	err := r.db.Exec(ctx, objectProcess.EndPoint, objectProcess.DBName, query, args)
 	if err != nil {
@@ -55,7 +78,16 @@ func (r dbRepository) InsertData(
 	return nil
 }
 
-func ConvertColumns(object model.TargetObject) string {
+func (r dbRepository) ClearData(ctx context.Context, object model.ObjectProcess) error {
+	query := fmt.Sprintf(baseQueryClearData, object.DBName, object.TableName)
+	err := r.db.Exec(ctx, object.EndPoint, object.DBName, query, []interface{}{})
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func convertColumns(object model.TargetObject) string {
 	val := reflect.ValueOf(&object).Elem()
 	typ := reflect.TypeOf(&object).Elem()
 	columns := model.OpenRoundBracket
@@ -79,7 +111,7 @@ func ConvertColumns(object model.TargetObject) string {
 	return columns
 }
 
-func ConvertValues(collect []model.TargetObject) interface{} {
+func convertValues(collect []model.TargetObject) interface{} {
 	result := ""
 	for i := 0; i < len(collect); i++ {
 		result += model.OpenRoundBracket

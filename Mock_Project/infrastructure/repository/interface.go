@@ -8,7 +8,10 @@ import (
 type IDBRepository interface {
 	InitConnection(config *model.Server, endpoint, dbName string) error
 	CreateNewTable(ctx context.Context, object model.ObjectProcess) error
-	InsertData(ctx context.Context, objectProcess model.ObjectProcess, args []interface{}) error
+	ImportDataFiles(file string, ctx context.Context, object model.ObjectProcess) error
+	ExportDataFiles(file string, ctx context.Context, object model.ObjectProcess) error
+	InsertData(ctx context.Context, object model.ObjectProcess, args []interface{}) error
+	ClearData(ctx context.Context, object model.ObjectProcess) error
 	Close() error
 }
 

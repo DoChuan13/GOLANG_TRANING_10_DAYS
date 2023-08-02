@@ -29,7 +29,9 @@ func New(infra *infrastructure.Infra, cfg *model.Server) *Server {
 
 func (s *Server) Start(ctx context.Context) error {
 	//Config
-	var pathFile = "file/faker/ListValue.csv"
+	var mkdirPath = "file"
+	var fileName = "ListValue.csv"
+	folder := "/Users/Chuan/Desktop/demo/temp/"
 	kafkaDB := model.KafkaDB{
 		Port:              3306,
 		User:              "root",
@@ -52,12 +54,12 @@ func (s *Server) Start(ctx context.Context) error {
 
 	//Read File Process
 	getLogInfo("Step 1: Read File Started \t\t(%s)\n")
-	fileService := read_data.NewService()
-	rows, err := fileService.ReadFileProcess(pathFile)
-	getLogInfo("Step 1: Read File Completed \t\t(%s)\n")
+	fileService := read_data.NewService(mkdirPath, fileName)
+	rows, err := fileService.ReadFileProcess()
 	if err != nil {
 		return err
 	}
+	getLogInfo("Step 1: Read File Completed \t\t(%s)\n")
 
 	//Load Kafka Repository
 	kafkaRepository := repository.NewKafkaRepository(s.infra, &cfg)
@@ -69,29 +71,30 @@ func (s *Server) Start(ctx context.Context) error {
 	getLogInfo("Step 2: Kafka Process Started \t\t(%s)\n")
 	kafkaService := kafka_process.NewKafkaService(&cfg, &kafkaRepository)
 	objectProcessList, err := kafkaService.StartKafkaProcess(rows)
-	getLogInfo("Step 2: Kafka Process Completed \t(%s)\n")
 	if err != nil {
 		return err
 	}
+	getLogInfo("Step 2: Kafka Process Completed \t(%s)\n")
 
 	//Start Fetch Database Service & Process
 	getLogInfo("Step 3: Fetch DB Started \t\t(%s)\n")
 	fetchService := fetch_db.NewFetchService(&cfg, &dbRepository)
 	err = fetchService.StartFetchDB(ctx, &objectProcessList)
-	getLogInfo("Step 3: Fetch DB Completed \t\t(%s)\n")
 	if err != nil {
 		return err
 	}
+	getLogInfo("Step 3: Fetch DB Completed \t\t(%s)\n")
 
 	//Start Database Service & Process
 	getLogInfo("Step 4: Import DB Started \t\t(%s)\n")
-	dbService := insert_data.NewDBService(&cfg, &dbRepository)
+	dbService := insert_data.NewDBService(&cfg, &dbRepository, folder)
 	err = dbService.StartDBProcess(ctx, &objectProcessList)
-	getLogInfo("Step 4: Import DB Completed \t\t(%s)\n")
 	if err != nil {
 		return err
 	}
-	getLogInfo("Total Process is \t\t\t(%s)\n")
+	getLogInfo("Step 4: Import DB Completed \t\t(%s)\n")
+
+	getLogInfo("Process Finished at \t\t\t(%s)\n")
 	return nil
 }
 

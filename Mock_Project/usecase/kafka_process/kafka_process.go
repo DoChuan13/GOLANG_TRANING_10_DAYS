@@ -5,10 +5,8 @@ import (
 	"Mock_Project/model"
 	"fmt"
 	"reflect"
-	"sort"
 	"strings"
 	"sync"
-	"time"
 )
 
 type Server struct {
@@ -17,6 +15,7 @@ type Server struct {
 	wg              *sync.WaitGroup
 	mu              *sync.Mutex
 	err             chan error
+	collect         chan model.ObjectProcess
 }
 
 var totalCount = 0
@@ -28,6 +27,7 @@ func NewKafkaService(cfg *model.Server, kafkaRepository *repository.IKafkaReposi
 		wg:              new(sync.WaitGroup),
 		mu:              new(sync.Mutex),
 		err:             make(chan error, 1),
+		collect:         make(chan model.ObjectProcess, 1),
 	}
 }
 
@@ -55,24 +55,19 @@ func (s Server) StartKafkaProcess(rows []string) ([]model.ObjectProcess, error) 
 		}
 
 	}
-
 	s.wg.Wait()
+	fmt.Println("Total Producer Go Topic ====> ", totalCount)
 
 	defer func() {
 		_ = s.kafkaRepository.ClearData(s.config)
 	}()
-
-	isProduced := false
-	for !isProduced {
-		select {
-		case err := <-s.err:
-			return nil, err
-		default:
-			isProduced = true
-		}
+	err := s.breakError()
+	if err != nil {
+		return nil, err
 	}
 
 	//Consumer All Messages & Return All Data
+	s.collect = make(chan model.ObjectProcess, len(s.config.Topics))
 	var collection []model.ObjectProcess
 	for _, topic := range s.config.Topics {
 		s.wg.Add(1)
@@ -80,14 +75,26 @@ func (s Server) StartKafkaProcess(rows []string) ([]model.ObjectProcess, error) 
 	}
 	s.wg.Wait()
 
+	err = s.breakError()
+	if err != nil {
+		return nil, err
+	}
+
 	count := 0
 	for _, collect := range collection {
 		count += len(collect.Value)
 	}
-	fmt.Println("Consumer Data ====> ", count)
+	fmt.Println("Total Consumer Data ====> ", count)
+	return collection, nil
+}
 
-	result := s.prepareDBList(collection)
-	return result, nil
+func (s Server) breakError() error {
+	select {
+	case err := <-s.err:
+		return err
+	default:
+	}
+	return nil
 }
 
 func buildMessage(batch []string) string {
@@ -151,6 +158,7 @@ func (s Server) consumerProcess(topic string, collection *[]model.ObjectProcess)
 	defer s.wg.Done()
 	messages, err := s.kafkaRepository.ConsumerData(s.config.Broker, topic, s.config.Partition)
 	if err != nil {
+		s.err <- err
 		fmt.Println("Consumer Error =>: ", err)
 		return
 	}
@@ -161,9 +169,7 @@ func (s Server) mergeTableGroup(collection *[]model.ObjectProcess, messages []in
 	s.mu.Lock()
 	objectList := *collection
 	for _, message := range messages {
-		var row = strings.Split(
-			strings.ReplaceAll(fmt.Sprint(message), model.DoubleQuote, model.EmptyString), model.NewLineCharacter,
-		)
+		var row = strings.Split(fmt.Sprint(message), model.NewLineCharacter)
 		for _, value := range row {
 			tableName, _, targetObject := convertToObject(fmt.Sprint(value))
 			existedTable := false
@@ -191,44 +197,6 @@ func (s Server) mergeTableGroup(collection *[]model.ObjectProcess, messages []in
 
 	*collection = objectList
 	s.mu.Unlock()
-}
-
-func (s Server) prepareDBList(collection []model.ObjectProcess) []model.ObjectProcess {
-	for i := 0; i < len(collection); i++ {
-		s.wg.Add(1)
-		go s.sortItems(&collection[i])
-	}
-	s.wg.Wait()
-	for i := 0; i < len(collection); i++ {
-		for j := 0; j < len(collection[i].Value); j++ {
-			curDate := formatDate(time.Now())
-			curTime := formatTime(time.Now())
-			collection[i].Value[j].TKSERIALNUMBER = 1
-			collection[i].Value[j].TKZXD = curDate
-			collection[i].Value[j].TKTIM = curTime
-			if j > 0 {
-				if collection[i].Value[j].QCD == collection[i].Value[j-1].QCD && curDate == collection[i].Value[j-1].TKZXD && curTime == collection[i].Value[j-1].TKTIM {
-					collection[i].Value[j].TKSERIALNUMBER = collection[i].Value[j-1].TKSERIALNUMBER + 1
-				}
-			}
-		}
-	}
-	return collection
-}
-
-func (s Server) sortItems(collect *model.ObjectProcess) {
-	defer s.wg.Done()
-	compare := func(i, j int) bool {
-		return compareObject(i, j, collect.Value)
-	}
-	sort.Slice(collect.Value, compare)
-}
-
-func compareObject(i, j int, value []model.TargetObject) bool {
-	if value[i].QCD != value[j].QCD {
-		return strings.Compare(value[i].QCD, value[j].QCD) < 0
-	}
-	return strings.Compare(value[i].TIME, value[j].TIME) < 0
 }
 
 func convertToObject(valueStr string) (tableName, topicName string, targetObject model.TargetObject) {
@@ -261,12 +229,4 @@ func generateObjectMap(value []string) map[string]string {
 		objectMap[key] = value[i]
 	}
 	return objectMap
-}
-
-func formatTime(time time.Time) string {
-	return time.Format(model.TimeFormatWithMicrosecond)
-}
-
-func formatDate(time time.Time) string {
-	return time.Format(model.DateFormatWithStroke)
 }

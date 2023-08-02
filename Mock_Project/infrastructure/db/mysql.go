@@ -62,7 +62,7 @@ func (c mysql) Exec(ctx context.Context, endpoint, dbName, sql string, args []in
 	_, err = tx.ExecContext(ctx, sql, args...)
 	if err != nil {
 		_ = tx.Rollback()
-		return fmt.Errorf("transaction failed ===>%s", err)
+		return fmt.Errorf("transaction failed ===> %s", err)
 
 	}
 	err = tx.Commit()

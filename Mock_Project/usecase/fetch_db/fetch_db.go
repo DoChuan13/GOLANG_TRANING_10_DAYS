@@ -11,6 +11,7 @@ type Server struct {
 	config       *model.Server
 	dbRepository repository.IDBRepository
 	wg           *sync.WaitGroup
+	err          chan error
 }
 
 func NewFetchService(cfg *model.Server, dbRepository *repository.IDBRepository) IFetchDB {
@@ -18,6 +19,7 @@ func NewFetchService(cfg *model.Server, dbRepository *repository.IDBRepository) 
 		config:       cfg,
 		dbRepository: *dbRepository,
 		wg:           new(sync.WaitGroup),
+		err:          make(chan error),
 	}
 }
 
