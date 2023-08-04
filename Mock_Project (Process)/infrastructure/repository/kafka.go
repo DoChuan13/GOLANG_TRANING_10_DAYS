@@ -55,28 +55,31 @@ func (k kafkaRepository) RemoveTopic() error {
 func parseConsumer(collection *chan sarama.ConsumerMessage) ([]string, error) {
 	var result []string
 	i := 0
-	var preDate, preTime string
-	var preSerial int
+	var newField [3]string
 	for msg := range *collection {
-		tempSlice := strings.Split(string(msg.Value), model.CommaCharacter)
+		recordSlice := strings.Split(string(msg.Value), model.CommaCharacter)
 		curDate := formatDate(time.Now())
 		curTime := formatTime(time.Now())
 		serialNumber := 1
 
 		if i > 0 {
-			if curDate == preDate && curTime == preTime {
-				serialNumber = preSerial + 1
+			if curDate == newField[0] && curTime == newField[1] {
+				curSerial, _ := strconv.Atoi(newField[2])
+				serialNumber = curSerial + 1
 			}
 		}
-		preDate = curDate
-		preTime = curTime
-		preSerial = serialNumber
+		newField[0] = curDate
+		newField[1] = curTime
+		newField[2] = strconv.Itoa(serialNumber)
 		i++
 
 		newField := []string{curDate, curTime, strconv.Itoa(serialNumber)}
-		finalValue := append(tempSlice[:2], append(newField, tempSlice[2:]...)...)
-		result = append(result, strings.Join(finalValue, model.CommaCharacter))
+		recordSlice = append(recordSlice, newField...)
+		copy(recordSlice[2+len(newField):], recordSlice[2:])
+		copy(recordSlice[2:], newField)
+		result = append(result, strings.Join(recordSlice, model.CommaCharacter))
 	}
+	//close(*collection)
 	return result, nil
 }
 

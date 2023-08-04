@@ -41,7 +41,7 @@ func (k kafka) InitConnection(topic string) error {
 	if isExists {
 		return nil
 	}
-	err := k.CreateTopic(topic, 1)
+	err := k.CreateTopic(topic, 10)
 	if err != nil {
 		return err
 	}
