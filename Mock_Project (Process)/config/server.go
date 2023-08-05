@@ -19,10 +19,10 @@ func InitConfig() (*model.Server, error) {
 	config.Password = "ChuanDo@13"
 	config.DriverName = "mysql"
 	config.Port = 3306
-	config.MaxIdleConnection = 10
-	config.MaxOpenConnection = 10
-	config.RetryTimes = 3000
-	config.RetryWaitMs = 3000
+	config.MaxIdleConnection = 100
+	config.MaxOpenConnection = 100
+	config.RetryTimes = 5000
+	config.RetryWaitMs = 5000
 
 	//Goroutine
 	config.Limited = 200000

@@ -98,7 +98,6 @@ func (s *Server) Start(ctx context.Context) error {
 			//}
 			s.cond.L.Lock()
 			if len(s.ltdDB) == cap(s.ltdDB) {
-				fmt.Println("Waiting DB")
 				s.cond.Wait()
 			}
 			wg.Add(1)

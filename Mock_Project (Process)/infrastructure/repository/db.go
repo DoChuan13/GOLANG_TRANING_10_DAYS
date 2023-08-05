@@ -6,12 +6,10 @@ import (
 	"Mock_Project/model"
 	"context"
 	"fmt"
-	"reflect"
-	"strconv"
 )
 
 const (
-	baseInsertIntoTable = "insert into %s.%s %s values %s;"
+	//baseInsertIntoTable = "insert into %s.%s %s values %s;"
 	baseCreateTable     = "create table if not exists %s.%s (%s)"
 	baseLoadImportFiles = "load data infile '%s' into table %s.%s fields terminated by ',' lines terminated by '\n';"
 	baseLoadExportFiles = "select * into outfile '%s' fields terminated by ',' lines terminated by '\n' from %s.%s;"
@@ -160,21 +158,21 @@ func generateFields() string {
 	return result
 }
 
-//func (r dbRepository) InsertData(
-//	ctx context.Context, objectProcess model.ConsumerObject, args []interface{},
-//) error {
-//	if len(objectProcess.Records) == 0 {
-//		return fmt.Errorf("value is Empty")
-//	}
-//	columns := convertColumns(objectProcess.Value[0])
-//	values := convertValues(objectProcess.Value)
-//	query := fmt.Sprintf(baseInsertIntoTable, objectProcess.DBName, objectProcess.TableName, columns, values)
-//	err := r.db.Exec(ctx, objectProcess.EndPoint, objectProcess.DBName, query, args)
-//	if err != nil {
-//		return err
-//	}
-//	return nil
-//}
+/*func (r dbRepository) InsertData(
+	ctx context.Context, objectProcess model.ConsumerObject, args []interface{},
+) error {
+	if len(objectProcess.Records) == 0 {
+		return fmt.Errorf("value is Empty")
+	}
+	columns := convertColumns(objectProcess.Value[0])
+	values := convertValues(objectProcess.Value)
+	query := fmt.Sprintf(baseInsertIntoTable, objectProcess.DBName, objectProcess.TableName, columns, values)
+	err := r.db.Exec(ctx, objectProcess.EndPoint, objectProcess.DBName, query, args)
+	if err != nil {
+		return err
+	}
+	return nil
+}
 
 func convertColumns(object model.TargetObject) string {
 	val := reflect.ValueOf(&object).Elem()
@@ -224,4 +222,4 @@ func convertValues(collect []model.TargetObject) interface{} {
 		}
 	}
 	return result
-}
+}*/
