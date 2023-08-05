@@ -33,7 +33,7 @@ func Init(cfg *model.Server) (*Infra, error) {
 
 // Close closes resources gracefully
 func (f *Infra) Close() {
-	if f.DBHandler != nil {
-		_ = f.DBHandler.Close()
-	}
+	_ = f.KafkaHandler.CloseTopic()
+	_ = f.KafkaHandler.RemoveTopic()
+	_ = f.DBHandler.CloseAllDb()
 }

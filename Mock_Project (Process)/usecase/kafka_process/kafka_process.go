@@ -50,7 +50,6 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 		s.ltdRoutine <- true
 		totalCount++
 		recordSlide = strings.Split(rows[i], model.CommaCharacter)
-		//topicName := rows[i][16:17] + model.UnderScoreCharacter + rows[i][18:19] + model.UnderScoreCharacter + rows[i][20:28]
 		topicName := recordSlide[2] + model.UnderScoreCharacter + recordSlide[3] + model.UnderScoreCharacter + recordSlide[4]
 		_, isExists := s.config.Topics[topicName]
 
@@ -69,7 +68,6 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 			//fmt.Println("Waiting Limited Goroutine")
 			s.cond.Wait()
 		}
-		//fmt.Println("Next Goroutine")
 		s.wg.Add(1)
 		go s.producerProcess(topicName, rows[i], 0)
 		s.cond.L.Unlock()
@@ -81,6 +79,7 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 	//Detect Error in Goroutine
 	err := s.breakError()
 	if err != nil {
+		fmt.Println("Error Producer==> ", err)
 		return err
 	}
 	pkg.LogStepProcess(startTime, "2.2 Finish Producer")
@@ -101,21 +100,8 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 	}
 
 	pkg.LogStepProcess(startTime, "2.4 Finish Consumer")
-	fmt.Println("Re-check Collection... ")
-	fmt.Println("Total Consumer Data ====> ", reCount)
+	fmt.Println("Re-check Collection (Total Consumer Data)... ", reCount)
 
-	//Remove All Topic
-	//Consumer All Messages & Return All Data
-	//defer func() {
-	err = s.kafkaRepository.CloseTopic()
-	if err != nil {
-		return err
-	}
-	err = s.kafkaRepository.RemoveTopic()
-	if err != nil {
-		fmt.Println(err)
-		return err
-	}
 	done <- true
 	return nil
 }
@@ -130,7 +116,7 @@ func (s Server) breakError() error {
 }
 
 func (s Server) producerProcess(topic, content string, partitionId int32) {
-	err := s.kafkaRepository.ProducerData(topic, partitionId, content)
+	err := s.kafkaRepository.SyncProducerData(topic, partitionId, content)
 	//fmt.Println("Topic ===>", topic)
 	if err != nil {
 		s.err <- err

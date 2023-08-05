@@ -35,8 +35,12 @@ func (k kafkaRepository) CreateTopic(topic string, partitionNum int32) error {
 	return k.kafkaClient.CreateTopic(topic, partitionNum)
 }
 
-func (k kafkaRepository) ProducerData(topic string, partition int32, content string) error {
-	return k.kafkaClient.ProducerData(topic, partition, content)
+func (k kafkaRepository) SyncProducerData(topic string, partition int32, content string) error {
+	return k.kafkaClient.SyncProducerData(topic, partition, content)
+}
+
+func (k kafkaRepository) ASyncProducerData(topic string, partition int32, content string) error {
+	return k.kafkaClient.ASyncProducerData(topic, partition, content)
 }
 
 func (k kafkaRepository) ConsumerData(topic string, partition int32) ([]string, error) {

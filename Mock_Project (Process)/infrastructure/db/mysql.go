@@ -72,7 +72,7 @@ func (c mysql) Exec(ctx context.Context, endpoint, dbName, sql string, args []in
 	return nil
 }
 
-func (c mysql) Close() error {
+func (c mysql) CloseAllDb() error {
 	for _, db := range c.clients {
 		if err := db.Close(); err != nil {
 			return err

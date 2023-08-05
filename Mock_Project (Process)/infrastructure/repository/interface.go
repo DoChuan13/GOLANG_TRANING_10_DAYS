@@ -11,13 +11,14 @@ type IDBRepository interface {
 	ImportDataFiles(file string, ctx context.Context, object model.ConsumerObject) error
 	ExportDataFiles(file string, ctx context.Context, object model.ConsumerObject) error
 	ClearData(ctx context.Context, object model.ConsumerObject) error
-	Close() error
+	CloseAllDb() error
 	//InsertData(ctx context.Context, object model.ConsumerObject, args []interface{}) error
 }
 
 type IKafkaRepository interface {
 	CreateTopic(topic string, partitionNum int32) error
-	ProducerData(topic string, partition int32, content string) error
+	SyncProducerData(topic string, partition int32, content string) error
+	ASyncProducerData(topic string, partition int32, content string) error
 	ConsumerData(topic string, partition int32) ([]string, error)
 	InitConnection(topic string) error
 	CloseTopic() error

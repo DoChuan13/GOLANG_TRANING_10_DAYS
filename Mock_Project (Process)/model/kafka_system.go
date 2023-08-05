@@ -14,6 +14,7 @@ type Topic struct {
 }
 
 type Kafka struct {
-	Consumer sarama.Consumer
-	Producer sarama.SyncProducer
+	Consumer      sarama.Consumer
+	SyncProducer  sarama.SyncProducer
+	AsyncProducer sarama.AsyncProducer
 }

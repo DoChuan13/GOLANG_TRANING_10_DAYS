@@ -71,8 +71,8 @@ func (r dbRepository) ClearData(ctx context.Context, object model.ConsumerObject
 	return nil
 }
 
-func (r dbRepository) Close() error {
-	return r.db.Close()
+func (r dbRepository) CloseAllDb() error {
+	return r.db.CloseAllDb()
 }
 
 func generateFields() string {

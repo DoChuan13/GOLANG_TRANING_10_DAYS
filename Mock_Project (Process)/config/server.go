@@ -25,6 +25,6 @@ func InitConfig() (*model.Server, error) {
 	config.RetryWaitMs = 3000
 
 	//Goroutine
-	config.Limited = 100000
+	config.Limited = 200000
 	return config, nil
 }
