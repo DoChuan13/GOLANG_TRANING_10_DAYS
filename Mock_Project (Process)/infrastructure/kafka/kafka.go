@@ -192,6 +192,9 @@ func (k kafka) CloseTopic() error {
 		if err := client.SyncProducer.Close(); err != nil {
 			return err
 		}
+		if err := client.AsyncProducer.Close(); err != nil {
+			return err
+		}
 	}
 	return nil
 }
