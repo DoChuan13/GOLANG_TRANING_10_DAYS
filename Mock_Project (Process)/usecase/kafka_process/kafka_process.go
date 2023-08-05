@@ -100,7 +100,7 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 	}
 
 	pkg.LogStepProcess(startTime, "2.4 Finish Consumer")
-	fmt.Println("Re-check Collection (Total Consumer Data)... ", reCount)
+	//fmt.Println("Re-check Collection (Total Consumer Data)... ", reCount)
 
 	done <- true
 	return nil

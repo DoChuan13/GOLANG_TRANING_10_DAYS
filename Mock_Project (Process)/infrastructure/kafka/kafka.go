@@ -164,8 +164,10 @@ func (k kafka) ConsumerData(topic string, partition int32, parse ParseStruct) ([
 	go func() {
 		for isContinue {
 			select {
-			case err := <-resp.Errors():
+			case errInfo := <-resp.Errors():
+				err = errInfo
 				fmt.Println(err)
+				isContinue = false
 			case msg := <-resp.Messages():
 				collection <- *msg
 				if len(collection) == cap(collection) {
@@ -177,6 +179,9 @@ func (k kafka) ConsumerData(topic string, partition int32, parse ParseStruct) ([
 		wg.Done()
 	}()
 	wg.Wait()
+	if err != nil {
+		return nil, err
+	}
 	result, err := parse(&collection)
 	if err != nil {
 		return nil, err
