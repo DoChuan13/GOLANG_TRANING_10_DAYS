@@ -17,7 +17,7 @@ type Service struct {
 func NewService(path, name string) IFile {
 	return &Service{
 		parentPath: path,
-		filePath:   path + "/" + name,
+		filePath:   path + name,
 		name:       name,
 	}
 }

@@ -14,36 +14,28 @@ type Server struct {
 	config       *model.Server
 	dbRepository repository.IDBRepository
 	wg           *sync.WaitGroup
-	tempPath     string
 	err          chan error
 }
 
-func NewDBService(cfg *model.Server, dbRepository *repository.IDBRepository, path string) IDB {
+func NewDBService(cfg *model.Server, dbRepository *repository.IDBRepository) IDB {
 	return &Server{
 		config:       cfg,
 		dbRepository: *dbRepository,
 		wg:           new(sync.WaitGroup),
-		tempPath:     path,
 		err:          make(chan error, 1),
 	}
 }
 
 func (s Server) StartDBProcess(ctx context.Context, objectProcess *model.ConsumerObject) error {
+	var err error = nil
 	if len(objectProcess.Records) == 0 {
 		return fmt.Errorf("value is Empty")
 	}
 
-	////Create Temp Folder
-	fileService := read_data.NewService(s.tempPath, "")
-	err := fileService.CreateParentFolder()
-	if err != nil {
-		return err
-	}
-
 	s.processExportImport(ctx, *objectProcess)
 
-	//Remove Temp Folder
-	err = os.Remove(s.tempPath + model.StrokeCharacter + objectProcess.TableName)
+	//Remove Temp File
+	err = os.Remove(s.config.LocalPath + objectProcess.TableName)
 	if err != nil {
 		return err
 	}
@@ -52,7 +44,6 @@ func (s Server) StartDBProcess(ctx context.Context, objectProcess *model.Consume
 }
 
 func (s Server) processExportImport(ctx context.Context, collect model.ConsumerObject) {
-	file := s.tempPath + model.StrokeCharacter + collect.TableName
 	var err error = nil
 
 	//1. Initial Connection
@@ -62,7 +53,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 	}
 
 	//2. GenerateTable And Get Current Record
-	err = s.dbRepository.GenerateTableAndExpFile(file, ctx, collect)
+	err = s.dbRepository.GenerateTableAndExpFile(ctx, collect)
 	if err != nil {
 		fmt.Println("Generate Table Error ==>", err)
 		s.err <- err
@@ -70,7 +61,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 	}
 
 	//3. Add New Records to Temp Files
-	fileService := read_data.NewService(s.tempPath, collect.TableName)
+	fileService := read_data.NewService(s.config.LocalPath, collect.TableName)
 	err = fileService.InsertCurrentFiles(&collect.Records)
 	if err != nil {
 		fmt.Println("Insert New Data Error ==>", err)
@@ -87,7 +78,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 	}
 
 	//5. Import New Value to Table
-	err = s.dbRepository.ImportDataFiles(file, ctx, collect)
+	err = s.dbRepository.ImportDataFiles(ctx, collect)
 	if err != nil {
 		fmt.Println("Import Error ==>", err)
 		s.err <- err

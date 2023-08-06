@@ -31,7 +31,8 @@ func (r dbRepository) InitConnection(config *model.Server, endpoint, dbName stri
 	return r.db.InitConnection(config, endpoint, dbName)
 }
 
-func (r dbRepository) GenerateTableAndExpFile(file string, ctx context.Context, object model.ConsumerObject) error {
+func (r dbRepository) GenerateTableAndExpFile(ctx context.Context, object model.ConsumerObject) error {
+	file := r.config.DockerPath + object.TableName
 	query := fmt.Sprintf(baseCreateTableAndExportFile, object.TableName, file)
 	err := r.db.Exec(ctx, r.config.Endpoint, r.config.DBName, query, []interface{}{})
 	if err != nil {
@@ -40,7 +41,8 @@ func (r dbRepository) GenerateTableAndExpFile(file string, ctx context.Context, 
 	return nil
 }
 
-func (r dbRepository) ImportDataFiles(file string, ctx context.Context, object model.ConsumerObject) error {
+func (r dbRepository) ImportDataFiles(ctx context.Context, object model.ConsumerObject) error {
+	file := r.config.LocalPath + object.TableName
 	query := fmt.Sprintf(baseLoadImportFiles, file, r.config.DBName, object.TableName)
 	err := r.db.Exec(ctx, r.config.Endpoint, r.config.DBName, query, []interface{}{})
 	if err != nil {

@@ -11,7 +11,6 @@ import (
 	"Mock_Project/usecase/read_data"
 	"context"
 	"fmt"
-	"os"
 	_ "path/filepath"
 	"sync"
 	"time"
@@ -38,12 +37,7 @@ var wg sync.WaitGroup
 
 func (s *Server) Start(ctx context.Context) error {
 	//Config
-	dir, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-	tempTarget := dir + "/file/temp"
-	var mkdirPath = "file/collect"
+	var mkdirPath = "file/collect/"
 	//var fileName = "A0001&0F"
 
 	fmt.Print("Input File Name: ")
@@ -56,7 +50,6 @@ func (s *Server) Start(ctx context.Context) error {
 	//Read File Process
 	pkg.LogStepProcess(startTime, "Step 1: Read File Started")
 	fileService := read_data.NewService(mkdirPath, file)
-	_ = fileService.RemoveFolder(tempTarget)
 	rows, err := fileService.ReadFileProcess()
 	if err != nil {
 		return err
@@ -79,7 +72,7 @@ func (s *Server) Start(ctx context.Context) error {
 	}()
 
 	//Start Database Service & Process
-	dbService := insert_data.NewDBService(s.cfg, &dbRepository, tempTarget)
+	dbService := insert_data.NewDBService(s.cfg, &dbRepository)
 
 	isContinue := true
 	counter := 0
@@ -89,9 +82,6 @@ func (s *Server) Start(ctx context.Context) error {
 		case objectProcess := <-consumerCh:
 			s.ltdDB <- true
 			counter += len(objectProcess.Records)
-			//if counter%50000 == 0 {
-			//	fmt.Println("Check point", counter)
-			//}
 			s.cond.L.Lock()
 			if len(s.ltdDB) == cap(s.ltdDB) {
 				s.cond.Wait()

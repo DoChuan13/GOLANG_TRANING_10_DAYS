@@ -11,6 +11,9 @@ func InitConfig() (*model.Server, error) {
 	config.Block = 1000
 
 	//Config End Point
+	//config.DockerPath = "/docker-entrypoint-initdb.d/temp/"
+	config.DockerPath = "/Users/Chuan/Personal/Docker/Bitnami/sqldump/temp/"
+	config.LocalPath = "/Users/Chuan/Personal/Docker/Bitnami/sqldump/temp/"
 	config.Endpoint = "127.0.0.1"
 	config.DBName = "demo"
 

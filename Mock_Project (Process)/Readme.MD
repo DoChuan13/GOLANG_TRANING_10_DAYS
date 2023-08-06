@@ -1,5 +1,8 @@
 **Procedure for DB**
 
+delimiter
+//
+-- Create the Procedure called 'GenerateTableAndGetRecord()'"
 create procedure GenerateTableAndGetRecord(
     in tableName varchar(255),
     in filePath longtext

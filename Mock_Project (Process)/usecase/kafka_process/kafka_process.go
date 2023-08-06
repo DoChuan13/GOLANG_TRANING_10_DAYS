@@ -62,10 +62,9 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 		}
 		s.config.Topics[topicName]++
 
-		//Limit Number Goroutine
+		//Limit Lock Number Goroutine
 		s.cond.L.Lock()
 		if len(s.ltdRoutine) == s.config.Limited {
-			//fmt.Println("Waiting Limited Goroutine")
 			s.cond.Wait()
 		}
 		s.wg.Add(1)
@@ -100,7 +99,6 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 	}
 
 	pkg.LogStepProcess(startTime, "2.4 Finish Consumer")
-	//fmt.Println("Re-check Collection (Total Consumer Data)... ", reCount)
 
 	done <- true
 	return nil

@@ -13,8 +13,10 @@ type KafkaDB struct {
 
 // EndPoint only contains DB configuration host and DB name
 type EndPoint struct {
-	Endpoint string
-	DBName   string
+	DockerPath string
+	LocalPath  string
+	Endpoint   string
+	DBName     string
 }
 
 type Goroutine struct {
