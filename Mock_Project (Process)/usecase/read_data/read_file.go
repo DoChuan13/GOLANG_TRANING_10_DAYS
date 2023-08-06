@@ -73,9 +73,9 @@ func (s Service) RemoveFolder() error {
 func (s Service) openFile() (*os.File, error) {
 	_, info := os.Stat(s.filePath)
 	if info != nil {
-		fmt.Println(info)
-		fmt.Println("New file is created!!!")
-		_ = os.Mkdir(s.parentPath, 0755)
+		//fmt.Println(info)
+		//fmt.Println("New file is created!!!")
+		//_ = os.Mkdir(s.parentPath, 0755)
 		//if err != nil {
 		//	return nil, err
 		//}
@@ -85,7 +85,10 @@ func (s Service) openFile() (*os.File, error) {
 		}
 		return file, nil
 	}
-	file, _ := os.OpenFile(s.filePath, os.O_WRONLY|os.O_APPEND, 0644)
+	file, err := os.OpenFile(s.filePath, os.O_WRONLY|os.O_APPEND, 0644)
+	if err != nil {
+		return nil, err
+	}
 	return file, nil
 }
 

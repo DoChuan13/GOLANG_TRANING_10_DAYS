@@ -48,7 +48,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 		return err
 	}
 
-	//2. GenerateTable And Get Current Record
+	//2. GenerateTable And Get Current Record (Canceled Export File)
 	err = s.dbRepository.GenerateTableAndExpFile(ctx, collect)
 	if err != nil {
 		fmt.Println("Generate Table Error ==>", err)
@@ -56,22 +56,22 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 		return err
 	}
 
-	//3. Add New Records to Temp Files
+	//3. Generate New Records to Temp Files
 	fileService := read_data.NewService(s.config.LocalPath, collect.TableName)
 	err = fileService.InsertCurrentFiles(&collect.Records)
 	if err != nil {
-		fmt.Println("Insert New Data Error ==>", err)
+		fmt.Println("Generate New Data Error ==>", err)
 		s.err <- err
 		return err
 	}
 
-	//4. Truncate Remote all Current Data
-	err = s.dbRepository.ClearData(ctx, collect)
-	if err != nil {
-		fmt.Println("Truncate Error ==>", err)
-		s.err <- err
-		return err
-	}
+	////4. Truncate Remote all Current Data (Canceled)
+	//err = s.dbRepository.ClearData(ctx, collect)
+	//if err != nil {
+	//	fmt.Println("Truncate Error ==>", err)
+	//	s.err <- err
+	//	return err
+	//}
 
 	//5. Import New Value to Table
 	err = s.dbRepository.ImportDataFiles(ctx, collect)

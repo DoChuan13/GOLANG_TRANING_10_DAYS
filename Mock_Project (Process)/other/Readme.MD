@@ -96,10 +96,10 @@ begin
     deallocate prepare createTable;
 
     -- Export Records File
-    set @export = concat('select * into outfile ''',filePath,''' fields terminated by '','' lines terminated by ''\\n'' from ',tableName);
-    prepare exportFile from @export;
-    execute exportFile;
-    deallocate prepare exportFile;
+#     set @export = concat('select * into outfile ''',filePath,''' fields terminated by '','' lines terminated by ''\\n'' from ',tableName);
+#     prepare exportFile from @export;
+#     execute exportFile;
+#     deallocate prepare exportFile;
 end;
 //
 delimiter ;
