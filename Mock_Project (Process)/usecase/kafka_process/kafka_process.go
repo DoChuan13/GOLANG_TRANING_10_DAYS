@@ -18,7 +18,8 @@ type Server struct {
 	mu              *sync.Mutex
 	cond            *sync.Cond
 	err             chan error
-	ltdRoutine      chan bool
+	producerLtd     chan bool
+	consumerLtd     chan bool
 }
 
 var totalCount, reCount = 0, 0
@@ -31,7 +32,8 @@ func NewKafkaService(cfg *model.Server, kafkaRepository *repository.IKafkaReposi
 		mu:              new(sync.Mutex),
 		cond:            new(sync.Cond),
 		err:             make(chan error, 1),
-		ltdRoutine:      make(chan bool, cfg.Limited),
+		producerLtd:     make(chan bool, cfg.ProducerLtd),
+		consumerLtd:     make(chan bool, cfg.ConsumerLtd),
 	}
 }
 
@@ -47,7 +49,7 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 	var recordSlide []string
 	//Producer All Messages (Topic = First Character + Last Character)
 	for i := 0; i < len(rows); i++ {
-		s.ltdRoutine <- true
+		s.producerLtd <- true
 		totalCount++
 		recordSlide = strings.Split(rows[i], model.CommaCharacter)
 		topicName := recordSlide[2] + model.UnderScoreCharacter + recordSlide[3] + model.UnderScoreCharacter + recordSlide[4]
@@ -64,7 +66,7 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 
 		//Limit Lock Number Goroutine
 		s.cond.L.Lock()
-		if len(s.ltdRoutine) == s.config.Limited {
+		if len(s.producerLtd) == s.config.ProducerLtd {
 			s.cond.Wait()
 		}
 		s.wg.Add(1)
@@ -73,7 +75,7 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 	}
 
 	s.wg.Wait()
-	close(s.ltdRoutine)
+	close(s.producerLtd)
 
 	//Detect Error in Goroutine
 	err := s.breakError()
@@ -86,11 +88,18 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 
 	pkg.LogStepProcess(startTime, "2.3 Start Consumer")
 	for topic := range s.config.Topics {
+		s.consumerLtd <- true
+		s.cond.L.Lock()
+		if len(s.consumerLtd) == s.config.ConsumerLtd {
+			s.cond.Wait()
+		}
 		s.wg.Add(1)
 		go s.consumerProcess(csCh, topic, 0)
+		s.cond.L.Unlock()
 	}
 
 	s.wg.Wait()
+	close(s.consumerLtd)
 
 	//Detect Error in Goroutine
 	err = s.breakError()
@@ -121,7 +130,7 @@ func (s Server) producerProcess(topic, content string, partitionId int32) {
 		return
 	}
 	s.wg.Done()
-	<-s.ltdRoutine
+	<-s.producerLtd
 	s.cond.Signal()
 }
 
@@ -132,6 +141,8 @@ func (s Server) consumerProcess(csCha chan model.ConsumerObject, topic string, p
 		s.err <- err
 		return
 	}
+	<-s.consumerLtd
+	s.cond.Signal()
 	reCount += len(messages)
 	consumer := model.ConsumerObject{TableName: topic, Records: messages}
 

@@ -166,7 +166,7 @@ func (k kafka) ConsumerData(topic string, partition int32, parse ParseStruct) ([
 			select {
 			case errInfo := <-resp.Errors():
 				err = errInfo
-				fmt.Println(err)
+				fmt.Println("Consumer Partition err ==> ", err)
 				isContinue = false
 			case msg := <-resp.Messages():
 				collection <- *msg

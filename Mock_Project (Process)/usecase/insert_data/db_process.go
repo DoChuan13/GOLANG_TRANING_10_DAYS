@@ -6,7 +6,6 @@ import (
 	"Mock_Project/usecase/read_data"
 	"context"
 	"fmt"
-	"os"
 	"sync"
 )
 
@@ -32,10 +31,7 @@ func (s Server) StartDBProcess(ctx context.Context, objectProcess *model.Consume
 		return fmt.Errorf("value is Empty")
 	}
 
-	s.processExportImport(ctx, *objectProcess)
-
-	//Remove Temp File
-	err = os.Remove(s.config.LocalPath + objectProcess.TableName)
+	err = s.processExportImport(ctx, *objectProcess)
 	if err != nil {
 		return err
 	}
@@ -43,13 +39,13 @@ func (s Server) StartDBProcess(ctx context.Context, objectProcess *model.Consume
 	return nil
 }
 
-func (s Server) processExportImport(ctx context.Context, collect model.ConsumerObject) {
+func (s Server) processExportImport(ctx context.Context, collect model.ConsumerObject) error {
 	var err error = nil
 
 	//1. Initial Connection
 	err = s.dbRepository.InitConnection(s.config, s.config.Endpoint, s.config.DBName)
 	if err != nil {
-		return
+		return err
 	}
 
 	//2. GenerateTable And Get Current Record
@@ -57,7 +53,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 	if err != nil {
 		fmt.Println("Generate Table Error ==>", err)
 		s.err <- err
-		return
+		return err
 	}
 
 	//3. Add New Records to Temp Files
@@ -66,7 +62,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 	if err != nil {
 		fmt.Println("Insert New Data Error ==>", err)
 		s.err <- err
-		return
+		return err
 	}
 
 	//4. Truncate Remote all Current Data
@@ -74,7 +70,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 	if err != nil {
 		fmt.Println("Truncate Error ==>", err)
 		s.err <- err
-		return
+		return err
 	}
 
 	//5. Import New Value to Table
@@ -82,6 +78,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 	if err != nil {
 		fmt.Println("Import Error ==>", err)
 		s.err <- err
-		return
+		return err
 	}
+	return err
 }

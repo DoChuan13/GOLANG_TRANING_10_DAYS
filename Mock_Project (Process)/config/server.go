@@ -11,8 +11,8 @@ func InitConfig() (*model.Server, error) {
 	config.Block = 1000
 
 	//Config End Point
-	//config.DockerPath = "/docker-entrypoint-initdb.d/temp/"
-	config.DockerPath = "/Users/Chuan/Personal/Docker/Bitnami/sqldump/temp/"
+	config.SqlPath = "/docker-entryDockerPathnitdb.d/temp/"
+	//config.SqlPath = "/Users/Chuan/DockerPathl/Docker/Bitnami/sqldump/temp/"
 	config.LocalPath = "/Users/Chuan/Personal/Docker/Bitnami/sqldump/temp/"
 	config.Endpoint = "127.0.0.1"
 	config.DBName = "demo"
@@ -28,6 +28,7 @@ func InitConfig() (*model.Server, error) {
 	config.RetryWaitMs = 5000
 
 	//Goroutine
-	config.Limited = 200000
+	config.ConsumerLtd = 500
+	config.ProducerLtd = 200000
 	return config, nil
 }

@@ -4,5 +4,5 @@ type IFile interface {
 	ReadFileProcess() ([]string, error)
 	InsertCurrentFiles(rows *[]string) error
 	CreateParentFolder() error
-	RemoveFolder(path string) error
+	RemoveFolder() error
 }

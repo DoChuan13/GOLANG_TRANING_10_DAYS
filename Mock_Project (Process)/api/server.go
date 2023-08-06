@@ -46,6 +46,10 @@ func (s *Server) Start(ctx context.Context) error {
 
 	//file.FakeAllData()
 
+	//***Pre-Load (Generate Temp folder)
+	tempSysService := read_data.NewService(s.cfg.LocalPath, "")
+	_ = tempSysService.CreateParentFolder()
+
 	var startTime = time.Now()
 	//Read File Process
 	pkg.LogStepProcess(startTime, "Step 1: Read File Started")
@@ -104,6 +108,9 @@ func (s *Server) Start(ctx context.Context) error {
 	fmt.Println("Total Count ===>", counter)
 
 	pkg.LogStepProcess(startTime, "Process Finished ")
+
+	//***Pre-Load (Finish Temp folder)
+	_ = tempSysService.RemoveFolder()
 	return nil
 }
 

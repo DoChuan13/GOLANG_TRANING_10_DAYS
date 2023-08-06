@@ -39,18 +39,19 @@ func (s Service) ReadFileProcess() ([]string, error) {
 }
 
 func (s Service) InsertCurrentFiles(rows *[]string) error {
+	var err error = nil
 	file, err := s.openFile()
 	if err != nil {
 		return err
 	}
-	defer closeFile(file)
 	for _, row := range *rows {
 		err := writeFile(file, row)
 		if err != nil {
 			return err
 		}
 	}
-	return nil
+	err = closeFile(file)
+	return err
 }
 
 func (s Service) CreateParentFolder() error {
@@ -61,8 +62,8 @@ func (s Service) CreateParentFolder() error {
 	return nil
 }
 
-func (s Service) RemoveFolder(path string) error {
-	err := os.RemoveAll(path)
+func (s Service) RemoveFolder() error {
+	err := os.RemoveAll(s.filePath)
 	if err != nil {
 		return err
 	}
@@ -97,6 +98,7 @@ func writeFile(file *os.File, content string) error {
 	return nil
 }
 
-func closeFile(f *os.File) {
-	_ = f.Close()
+func closeFile(f *os.File) error {
+	err := f.Close()
+	return err
 }
