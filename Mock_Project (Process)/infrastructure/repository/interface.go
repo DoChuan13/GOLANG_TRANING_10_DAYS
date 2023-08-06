@@ -7,9 +7,9 @@ import (
 
 type IDBRepository interface {
 	InitConnection(config *model.Server, endpoint, dbName string) error
-	GenerateTableAndExpFile(ctx context.Context, object model.ConsumerObject) error
-	ImportDataFiles(ctx context.Context, object model.ConsumerObject) error
-	ClearData(ctx context.Context, object model.ConsumerObject) error
+	GenerateTableAndExpFile(ctx context.Context, tableName string) error
+	ImportDataFiles(ctx context.Context, tableName string) error
+	ClearData(ctx context.Context, tableName string) error
 	CloseAllDb() error
 	//InsertData(ctx context.Context, object model.ConsumerObject, args []interface{}) error
 }

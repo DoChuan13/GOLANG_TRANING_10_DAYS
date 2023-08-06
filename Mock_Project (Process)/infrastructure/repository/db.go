@@ -11,8 +11,8 @@ import (
 const (
 	//baseInsertIntoTable = "insert into %s.%s %s values %s;"
 	baseCreateTableAndExportFile = "call GenerateTableAndGetRecord('%s','%s');"
-	baseLoadImportFiles          = "load data infile '%s' into table %s.%s fields terminated by ',' lines terminated by '\n';"
-	baseQueryClearData           = "truncate table %s.%s;"
+	baseLoadImportFiles          = "load data infile '%s' into table %s fields terminated by ',' lines terminated by '\n';"
+	baseQueryClearData           = "truncate table %s;"
 )
 
 type dbRepository struct {
@@ -31,9 +31,9 @@ func (r dbRepository) InitConnection(config *model.Server, endpoint, dbName stri
 	return r.db.InitConnection(config, endpoint, dbName)
 }
 
-func (r dbRepository) GenerateTableAndExpFile(ctx context.Context, object model.ConsumerObject) error {
-	file := r.config.SqlPath + object.TableName
-	query := fmt.Sprintf(baseCreateTableAndExportFile, object.TableName, file)
+func (r dbRepository) GenerateTableAndExpFile(ctx context.Context, tableName string) error {
+	file := r.config.SqlPath + tableName
+	query := fmt.Sprintf(baseCreateTableAndExportFile, tableName, file)
 	err := r.db.Exec(ctx, r.config.Endpoint, r.config.DBName, query, []interface{}{})
 	if err != nil {
 		return err
@@ -41,9 +41,9 @@ func (r dbRepository) GenerateTableAndExpFile(ctx context.Context, object model.
 	return nil
 }
 
-func (r dbRepository) ImportDataFiles(ctx context.Context, object model.ConsumerObject) error {
-	file := r.config.SqlPath + object.TableName
-	query := fmt.Sprintf(baseLoadImportFiles, file, r.config.DBName, object.TableName)
+func (r dbRepository) ImportDataFiles(ctx context.Context, tableName string) error {
+	file := r.config.SqlPath + tableName
+	query := fmt.Sprintf(baseLoadImportFiles, file, tableName)
 	err := r.db.Exec(ctx, r.config.Endpoint, r.config.DBName, query, []interface{}{})
 	if err != nil {
 		return err
@@ -51,8 +51,8 @@ func (r dbRepository) ImportDataFiles(ctx context.Context, object model.Consumer
 	return nil
 }
 
-func (r dbRepository) ClearData(ctx context.Context, object model.ConsumerObject) error {
-	query := fmt.Sprintf(baseQueryClearData, r.config.DBName, object.TableName)
+func (r dbRepository) ClearData(ctx context.Context, tableName string) error {
+	query := fmt.Sprintf(baseQueryClearData, tableName)
 	err := r.db.Exec(ctx, r.config.Endpoint, r.config.DBName, query, []interface{}{})
 	if err != nil {
 		return err

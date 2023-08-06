@@ -49,7 +49,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 	}
 
 	//2. GenerateTable And Get Current Record (Canceled Export File)
-	err = s.dbRepository.GenerateTableAndExpFile(ctx, collect)
+	err = s.dbRepository.GenerateTableAndExpFile(ctx, collect.TableName)
 	if err != nil {
 		fmt.Println("Generate Table Error ==>", err)
 		s.err <- err
@@ -66,7 +66,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 	}
 
 	////4. Truncate Remote all Current Data (Canceled)
-	//err = s.dbRepository.ClearData(ctx, collect)
+	//err = s.dbRepository.ClearData(ctx, collect.TableName)
 	//if err != nil {
 	//	fmt.Println("Truncate Error ==>", err)
 	//	s.err <- err
@@ -74,7 +74,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 	//}
 
 	//5. Import New Value to Table
-	err = s.dbRepository.ImportDataFiles(ctx, collect)
+	err = s.dbRepository.ImportDataFiles(ctx, collect.TableName)
 	if err != nil {
 		fmt.Println("Import Error ==>", err)
 		s.err <- err

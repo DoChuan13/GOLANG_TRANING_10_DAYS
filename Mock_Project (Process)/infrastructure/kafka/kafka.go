@@ -72,6 +72,18 @@ func (k kafka) InitConnection(topic string) error {
 
 func (k kafka) CreateTopic(topic string, partitionNum int32) error {
 	var err error = nil
+	//topicList, err := k.admin.ListTopics()
+	//if err != nil {
+	//	return err
+	//}
+	//_, exist := topicList[topic]
+	//if exist {
+	//	err = k.admin.DeleteTopic(topic)
+	//	if err != nil {
+	//		return err
+	//	}
+	//	return k.CreateTopic(topic, partitionNum)
+	//}
 	// Set number of partitions for topic
 	err = k.admin.CreateTopic(
 		topic, &sarama.TopicDetail{
@@ -81,10 +93,6 @@ func (k kafka) CreateTopic(topic string, partitionNum int32) error {
 	)
 
 	if err != nil {
-		//if strings.Contains(err.Error(), "already exists") {
-		//	_ = k.admin.DeleteTopic(topic)
-		//	return k.CreateTopic(topic, partitionNum)
-		//}
 		fmt.Println("Error setting number of partitions:=> ", err)
 		os.Exit(1)
 	}
@@ -206,11 +214,12 @@ func (k kafka) CloseTopic() error {
 
 func (k kafka) RemoveTopic() error {
 	defer func() { _ = k.admin.Close() }()
-	for topic := range k.system.Topics {
+	topicList, err := k.admin.ListTopics()
+	if err != nil {
+		return err
+	}
+	for topic := range topicList {
 		_ = k.admin.DeleteTopic(topic)
-		//if err != nil {
-		//	return nil
-		//}
 	}
 	return nil
 }
