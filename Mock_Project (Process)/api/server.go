@@ -68,7 +68,7 @@ func (s *Server) Start(ctx context.Context) error {
 
 	//Start Kafka Service & Process
 	pkg.LogStepProcess(startTime, "Step 2: Kafka Process Started")
-	kafkaService := kafka_process.NewKafkaService(s.cfg, &kafkaRepository)
+	kafkaService := kafka_process.NewKafkaService(startTime, s.cfg, &kafkaRepository)
 	var consumerCh = make(chan model.ConsumerObject)
 	var done = make(chan bool, 1)
 	go func() {

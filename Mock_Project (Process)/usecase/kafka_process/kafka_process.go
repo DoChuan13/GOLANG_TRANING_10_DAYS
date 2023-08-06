@@ -20,11 +20,12 @@ type Server struct {
 	err             chan error
 	producerLtd     chan bool
 	consumerLtd     chan bool
+	startTime       time.Time
 }
 
 var totalCount, reCount = 0, 0
 
-func NewKafkaService(cfg *model.Server, kafkaRepository *repository.IKafkaRepository) IKafka {
+func NewKafkaService(startTime time.Time, cfg *model.Server, kafkaRepository *repository.IKafkaRepository) IKafka {
 	return &Server{
 		config:          cfg,
 		kafkaRepository: *kafkaRepository,
@@ -34,13 +35,12 @@ func NewKafkaService(cfg *model.Server, kafkaRepository *repository.IKafkaReposi
 		err:             make(chan error, 1),
 		producerLtd:     make(chan bool, cfg.ProducerLtd),
 		consumerLtd:     make(chan bool, cfg.ConsumerLtd),
+		startTime:       startTime,
 	}
 }
 
-var startTime = time.Now()
-
 func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool, rows []string) error {
-	pkg.LogStepProcess(startTime, "2.1 Start Producer")
+	pkg.LogStepProcess(s.startTime, "2.1 Start Producer")
 	s.cond.L = new(sync.Mutex)
 
 	//Clear All Topic Error
@@ -83,10 +83,10 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 		fmt.Println("Error Producer==> ", err)
 		return err
 	}
-	pkg.LogStepProcess(startTime, "2.2 Finish Producer")
+	pkg.LogStepProcess(s.startTime, "2.2 Finish Producer")
 	fmt.Println("Total GoRoutine of Producer ====> ", totalCount)
 
-	pkg.LogStepProcess(startTime, "2.3 Start Consumer")
+	pkg.LogStepProcess(s.startTime, "2.3 Start Consumer")
 	for topic := range s.config.Topics {
 		s.consumerLtd <- true
 		s.cond.L.Lock()
@@ -107,7 +107,7 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 		return err
 	}
 
-	pkg.LogStepProcess(startTime, "2.4 Finish Consumer")
+	pkg.LogStepProcess(s.startTime, "2.4 Finish Consumer")
 
 	done <- true
 	return nil
