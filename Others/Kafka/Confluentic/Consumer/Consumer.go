@@ -8,12 +8,12 @@ import (
 )
 
 func main() {
-
 	c, err := kafka.NewConsumer(
 		&kafka.ConfigMap{
-			"bootstrap.servers": "localhost",
+			"bootstrap.servers": "localhost:9093",
 			"group.id":          "myGroup",
 			"auto.offset.reset": "earliest",
+			//"session.timeout.ms": "130",
 		},
 	)
 
@@ -21,13 +21,14 @@ func main() {
 		panic(err)
 	}
 
-	c.SubscribeTopics([]string{"myTopic", "^aRegex.*[Tt]opic"}, nil)
+	c.SubscribeTopics([]string{"myTopic"}, nil)
 
 	// A signal handler or similar could be used to set this to false to break the loop.
 	run := true
 
 	for run {
-		msg, err := c.ReadMessage(time.Second)
+		time.Sleep(time.Second)
+		msg, err := c.ReadMessage(time.Nanosecond)
 		if err == nil {
 			fmt.Printf("Message on %s: %s\n", msg.TopicPartition, string(msg.Value))
 		} else if !err.(kafka.Error).IsTimeout() {
@@ -35,6 +36,8 @@ func main() {
 			// Timeout is not considered an error because it is raised by
 			// ReadMessage in absence of messages.
 			fmt.Printf("Consumer error: %v (%v)\n", err, msg)
+		} else {
+			fmt.Println("Time Out ==>", err.Error())
 		}
 	}
 

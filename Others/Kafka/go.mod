@@ -4,6 +4,7 @@ go 1.20
 
 require (
 	github.com/IBM/sarama v1.40.1
+	github.com/confluentinc/confluent-kafka-go/v2 v2.2.0
 	github.com/ppatierno/kafka-go-examples v0.0.0-20190109212306-ee35e1a426ff
 )
 
@@ -13,7 +14,7 @@ require (
 	github.com/eapache/go-xerial-snappy v0.0.0-20230111030713-bf00bc1b83b6 // indirect
 	github.com/eapache/queue v1.1.0 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/hashicorp/errwrap v1.0.0 // indirect
+	github.com/hashicorp/errwrap v1.1.0 // indirect
 	github.com/hashicorp/go-multierror v1.1.1 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
 	github.com/jcmturner/aescts/v2 v2.0.0 // indirect

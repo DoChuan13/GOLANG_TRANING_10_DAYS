@@ -1,4 +1,4 @@
-package main
+package groupKafka
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/ppatierno/kafka-go-examples/util"
 )
 
-func main() {
+func Consumer() {
 
 	signals := make(chan os.Signal, 1)
 
@@ -36,10 +36,9 @@ func main() {
 		}
 		fmt.Println("Consumer closed")
 	}()
-
 	partitionConsumer, err := consumer.ConsumePartition(topic, int32(partition), sarama.OffsetNewest)
-	index := partitionConsumer.HighWaterMarkOffset()
-	max := consumer.HighWaterMarks()
+	//index := partitionConsumer.HighWaterMarkOffset()
+	//max := consumer.HighWaterMarks()
 	if err != nil {
 		panic("Error creating the partition consumer")
 	}
@@ -61,7 +60,7 @@ consumerLoop:
 				"Received message from %s-%d [%d]: %s = %s\n", msg.Topic, msg.Partition, msg.Offset, string(msg.Key),
 				string(msg.Value),
 			)
-			fmt.Println("High Water Max ===>", max, index)
+			//fmt.Println("High Water Max ===>", max, index)
 		case sig := <-signals:
 			fmt.Println("Got signal: ", sig)
 			break consumerLoop
