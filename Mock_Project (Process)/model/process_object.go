@@ -1,17 +1,5 @@
 package model
 
-type KafkaProcess struct {
-	Topic    string
-	ListRows []string
-}
-
-type ObjectProcess struct {
-	TableName string
-	EndPoint  string
-	DBName    string
-	Value     []TargetObject
-}
-
 type ConsumerObject struct {
 	TableName string
 	Records   []string

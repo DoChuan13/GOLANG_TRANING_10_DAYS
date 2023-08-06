@@ -6,7 +6,6 @@ import (
 	"Mock_Project/model"
 	"Mock_Project/pkg"
 	"Mock_Project/pkg/logger"
-	"Mock_Project/usecase/fetch_db"
 	"Mock_Project/usecase/insert_data"
 	"Mock_Project/usecase/kafka_process"
 	"Mock_Project/usecase/read_data"
@@ -75,14 +74,11 @@ func (s *Server) Start(ctx context.Context) error {
 	kafkaService := kafka_process.NewKafkaService(s.cfg, &kafkaRepository)
 	var consumerCh = make(chan model.ConsumerObject)
 	var done = make(chan bool, 1)
-	//var done = make(chan bool, 1)
 	go func() {
 		err = kafkaService.StartKafkaProcess(consumerCh, done, rows)
 	}()
 
-	//Start Fetch Database Service & Process
 	//Start Database Service & Process
-	fetchService := fetch_db.NewFetchService(s.cfg, &dbRepository)
 	dbService := insert_data.NewDBService(s.cfg, &dbRepository, tempTarget)
 
 	isContinue := true
@@ -101,7 +97,7 @@ func (s *Server) Start(ctx context.Context) error {
 				s.cond.Wait()
 			}
 			wg.Add(1)
-			go s.processDatabase(ctx, fetchService, &objectProcess, dbService)
+			go s.processDatabase(ctx, &objectProcess, dbService)
 			s.cond.L.Unlock()
 
 		case val := <-done:
@@ -121,15 +117,9 @@ func (s *Server) Start(ctx context.Context) error {
 	return nil
 }
 
-func (s *Server) processDatabase(
-	ctx context.Context, fetchService fetch_db.IFetchDB, objectProcess *model.ConsumerObject, dbService insert_data.IDB,
-) {
+func (s *Server) processDatabase(ctx context.Context, objectProcess *model.ConsumerObject, dbService insert_data.IDB) {
 	defer wg.Done()
-	err := fetchService.StartFetchDB(ctx, objectProcess)
-	if err != nil {
-		return
-	}
-	err = dbService.StartDBProcess(ctx, objectProcess)
+	err := dbService.StartDBProcess(ctx, objectProcess)
 	if err != nil {
 		return
 	}

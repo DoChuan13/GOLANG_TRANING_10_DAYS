@@ -53,16 +53,23 @@ func (s Server) StartDBProcess(ctx context.Context, objectProcess *model.Consume
 
 func (s Server) processExportImport(ctx context.Context, collect model.ConsumerObject) {
 	file := s.tempPath + model.StrokeCharacter + collect.TableName
+	var err error = nil
 
-	//Get All Record from Table
-	err := s.dbRepository.ExportDataFiles(file, ctx, collect)
+	//1. Initial Connection
+	err = s.dbRepository.InitConnection(s.config, s.config.Endpoint, s.config.DBName)
 	if err != nil {
-		fmt.Println("Export Error ==>", err)
+		return
+	}
+
+	//2. GenerateTable And Get Current Record
+	err = s.dbRepository.GenerateTableAndExpFile(file, ctx, collect)
+	if err != nil {
+		fmt.Println("Generate Table Error ==>", err)
 		s.err <- err
 		return
 	}
 
-	//Add New Records to Temp Files
+	//3. Add New Records to Temp Files
 	fileService := read_data.NewService(s.tempPath, collect.TableName)
 	err = fileService.InsertCurrentFiles(&collect.Records)
 	if err != nil {
@@ -71,7 +78,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 		return
 	}
 
-	//Truncate Remote all Current Data
+	//4. Truncate Remote all Current Data
 	err = s.dbRepository.ClearData(ctx, collect)
 	if err != nil {
 		fmt.Println("Truncate Error ==>", err)
@@ -79,7 +86,7 @@ func (s Server) processExportImport(ctx context.Context, collect model.ConsumerO
 		return
 	}
 
-	//Import New Value to Table
+	//5. Import New Value to Table
 	err = s.dbRepository.ImportDataFiles(file, ctx, collect)
 	if err != nil {
 		fmt.Println("Import Error ==>", err)
