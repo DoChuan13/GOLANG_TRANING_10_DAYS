@@ -7,7 +7,7 @@ func InitConfig() (*model.Server, error) {
 	//Config Kafka
 	config.Broker = []string{"127.0.0.1:9093"}
 	config.Topics = map[string]int{}
-	config.MaxPartition = 20
+	config.MaxPartition = 2
 	config.Block = 1000
 
 	//Config End Point

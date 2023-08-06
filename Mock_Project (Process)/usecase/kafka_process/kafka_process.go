@@ -40,11 +40,18 @@ func NewKafkaService(startTime time.Time, cfg *model.Server, kafkaRepository *re
 }
 
 func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool, rows []string) error {
+	var err error = nil
 	pkg.LogStepProcess(s.startTime, "2.1 Start Producer")
 	s.cond.L = new(sync.Mutex)
 
 	//Clear All Topic Error
 	//s.clearTopicAndStop(rows)
+
+	//Init Kafka Connection
+	err = s.kafkaRepository.InitConnection()
+	if err != nil {
+		return err
+	}
 
 	var recordSlide []string
 	//Producer All Messages (Topic = First Character + Last Character)
@@ -55,9 +62,9 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 		topicName := recordSlide[2] + model.UnderScoreCharacter + recordSlide[3] + model.UnderScoreCharacter + recordSlide[4]
 		_, isExists := s.config.Topics[topicName]
 
-		//Init Kafka Connect If not Exist
+		//Init Topic If not Exist
 		if !isExists {
-			err := s.kafkaRepository.InitConnection(topicName)
+			err = s.kafkaRepository.CreateTopic(topicName, s.config.MaxPartition)
 			if err != nil {
 				return err
 			}
@@ -78,7 +85,7 @@ func (s Server) StartKafkaProcess(csCh chan model.ConsumerObject, done chan bool
 	close(s.producerLtd)
 
 	//Detect Error in Goroutine
-	err := s.breakError()
+	err = s.breakError()
 	if err != nil {
 		fmt.Println("Error Producer==> ", err)
 		return err

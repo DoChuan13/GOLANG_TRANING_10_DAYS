@@ -19,7 +19,7 @@ type IKafkaRepository interface {
 	SyncProducerData(topic string, partition int32, content string) error
 	ASyncProducerData(topic string, partition int32, content string) error
 	ConsumerData(topic string, partition int32) ([]string, error)
-	InitConnection(topic string) error
+	InitConnection() error
 	CloseTopic() error
 	RemoveTopic() error
 }

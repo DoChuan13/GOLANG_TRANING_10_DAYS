@@ -23,8 +23,8 @@ func NewKafkaRepository(infra *infrastructure.Infra, cfg *model.Server) IKafkaRe
 	}
 }
 
-func (k kafkaRepository) InitConnection(topic string) error {
-	return k.kafkaClient.InitConnection(topic)
+func (k kafkaRepository) InitConnection() error {
+	return k.kafkaClient.InitConnection()
 }
 
 func (k kafkaRepository) CloseTopic() error {

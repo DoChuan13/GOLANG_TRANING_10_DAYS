@@ -13,6 +13,9 @@ type kafka struct {
 	config      *sarama.Config
 	admin       sarama.ClusterAdmin
 	system      *model.Server
+	clientName  string
+	err         chan error
+	wg          *sync.WaitGroup
 }
 
 // NewKafkaHandler constructor
@@ -36,19 +39,22 @@ func NewKafkaHandler(cfg *model.Server) (IKafkaHandler, error) {
 		config:      config,
 		system:      cfg,
 		admin:       admin,
+		clientName:  "KafkaClient",
+		err:         make(chan error, 1),
+		wg:          &sync.WaitGroup{},
 	}, err
 }
 
-func (k kafka) InitConnection(topic string) error {
+func (k kafka) InitConnection() error {
 	var err error = nil
-	_, isExists := k.kafkaClient[topic]
+	_, isExists := k.kafkaClient[k.clientName]
 	if isExists {
 		return err
 	}
-	err = k.CreateTopic(topic, 1)
-	if err != nil {
-		return err
-	}
+	//err = k.CreateTopic(topic, 1)
+	//if err != nil {
+	//	return err
+	//}
 	syncProducer, err := sarama.NewSyncProducer(k.system.Broker, k.config)
 	if err != nil {
 		return err
@@ -66,7 +72,7 @@ func (k kafka) InitConnection(topic string) error {
 		SyncProducer:  syncProducer,
 		AsyncProducer: aSyncProducer,
 	}
-	k.kafkaClient[topic] = newKafka
+	k.kafkaClient[k.clientName] = newKafka
 	return err
 }
 
@@ -101,7 +107,7 @@ func (k kafka) CreateTopic(topic string, partitionNum int32) error {
 
 func (k kafka) SyncProducerData(topic string, partition int32, content string) error {
 	var err error = nil
-	currentClient, isExists := k.kafkaClient[topic]
+	currentClient, isExists := k.kafkaClient[k.clientName]
 	if !isExists {
 		return fmt.Errorf("kafka topic not found")
 	}
@@ -126,7 +132,7 @@ func (k kafka) SyncProducerData(topic string, partition int32, content string) e
 
 func (k kafka) ASyncProducerData(topic string, partition int32, content string) error {
 	var err error = nil
-	currentClient, isExists := k.kafkaClient[topic]
+	currentClient, isExists := k.kafkaClient[k.clientName]
 	if !isExists {
 		return fmt.Errorf("kafka topic not found")
 	}
@@ -153,41 +159,25 @@ loop:
 	return err
 }
 
-func (k kafka) ConsumerData(topic string, partition int32, parse ParseStruct) ([]string, error) {
+func (k kafka) ConsumerData(topic string, _ int32, parse ParseStruct) ([]string, error) {
 	var err error = nil
-	currentClient, isExists := k.kafkaClient[topic]
+	currentClient, isExists := k.kafkaClient[k.clientName]
 	if !isExists {
 		return nil, fmt.Errorf("kafka topic not found")
 	}
 
-	resp, err := currentClient.Consumer.ConsumePartition(topic, partition, sarama.OffsetOldest)
-	if err != nil {
-		return nil, err
+	collection := make(chan sarama.ConsumerMessage, k.system.Topics[topic])
+	for i := 0; i < int(k.system.MaxPartition); i++ {
+		k.wg.Add(1)
+		go k.processConsumerPartitions(topic, currentClient, int32(i), collection)
 	}
-	size := resp.HighWaterMarkOffset()
-	collection := make(chan sarama.ConsumerMessage, size)
-	isContinue := true
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		for isContinue {
-			select {
-			case errInfo := <-resp.Errors():
-				err = errInfo
-				fmt.Println("Consumer Partition err ==> ", err)
-				isContinue = false
-			case msg := <-resp.Messages():
-				collection <- *msg
-				if len(collection) == cap(collection) {
-					isContinue = false
-				}
-			}
-		}
-		close(collection)
-		wg.Done()
-	}()
-	wg.Wait()
+	k.wg.Wait()
+	close(collection)
+
+	//Detect Error in Goroutine
+	err = k.breakError()
 	if err != nil {
+		fmt.Println("Error Producer==> ", err)
 		return nil, err
 	}
 	result, err := parse(&collection)
@@ -195,6 +185,43 @@ func (k kafka) ConsumerData(topic string, partition int32, parse ParseStruct) ([
 		return nil, err
 	}
 	return result, err
+}
+
+func (k kafka) processConsumerPartitions(
+	topic string, kafka model.Kafka, partitionId int32, collection chan sarama.ConsumerMessage,
+) {
+	count := 0
+	resp, err := kafka.Consumer.ConsumePartition(topic, partitionId, sarama.OffsetOldest)
+	if err != nil {
+		k.err <- err
+		return
+	}
+	size := resp.HighWaterMarkOffset()
+	isContinue := true
+	for isContinue {
+		select {
+		case errInfo := <-resp.Errors():
+			err = errInfo
+			fmt.Println("Consumer Partition err ==> ", err)
+			isContinue = false
+		case msg := <-resp.Messages():
+			collection <- *msg
+			count++
+			if count == int(size) {
+				isContinue = false
+			}
+		}
+	}
+	k.wg.Done()
+}
+
+func (k kafka) breakError() error {
+	select {
+	case err := <-k.err:
+		return err
+	default:
+	}
+	return nil
 }
 
 func (k kafka) CloseTopic() error {

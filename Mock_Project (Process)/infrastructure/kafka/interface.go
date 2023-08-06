@@ -8,7 +8,7 @@ import (
 type ParseStruct func(msg *chan sarama.ConsumerMessage) ([]string, error)
 
 type IKafkaHandler interface {
-	InitConnection(topic string) error
+	InitConnection() error
 	CreateTopic(topic string, partitionNum int32) error
 	SyncProducerData(topic string, partition int32, content string) error
 	ASyncProducerData(topic string, partition int32, content string) error
