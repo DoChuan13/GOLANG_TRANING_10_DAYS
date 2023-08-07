@@ -46,11 +46,11 @@ func fakerData(code Code) error {
 
 	for i := 0; i < numRecords; i++ {
 		var record model.SourceObject
-		record.QCD = code.name
+		record.CODE = code.name
 		record.TIME = getRandomTime()
-		record.TKQKBN = code.first
-		record.SNDC = code.last
-		record.ZXD = strings.ReplaceAll(randomDate(), "-", "")
+		record.FIRST = code.first
+		record.LAST = code.last
+		record.DATE = strings.ReplaceAll(randomDate(), "-", "")
 
 		// Ghi dữ liệu vào file CSV
 		str := convertValues(record)

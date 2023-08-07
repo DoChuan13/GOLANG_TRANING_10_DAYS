@@ -168,10 +168,8 @@ func (k kafka) ConsumerData(topic string, _ int32, parse ParseStruct) ([]string,
 
 	collection := make(chan sarama.ConsumerMessage, k.system.Topics[topic])
 	for i := 0; i < int(k.system.MaxPartition); i++ {
-		k.wg.Add(1)
-		go k.processConsumerPartitions(topic, currentClient, int32(i), collection)
+		k.processConsumerPartitions(topic, currentClient, int32(i), collection)
 	}
-	k.wg.Wait()
 	close(collection)
 
 	//Detect Error in Goroutine
@@ -212,7 +210,6 @@ func (k kafka) processConsumerPartitions(
 			}
 		}
 	}
-	k.wg.Done()
 }
 
 func (k kafka) breakError() error {
