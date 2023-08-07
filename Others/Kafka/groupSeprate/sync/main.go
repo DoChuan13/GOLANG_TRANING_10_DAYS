@@ -29,6 +29,14 @@ func main() {
 	}
 	i := 1
 
+	admin, _ := sarama.NewClusterAdmin(bootstrapServers, nil)
+	err = admin.CreateTopic(topic, &sarama.TopicDetail{NumPartitions: 2, ReplicationFactor: 1}, false)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
 	defer func() {
 		err := producer.Close()
 		if err != nil {
@@ -38,11 +46,19 @@ func main() {
 		fmt.Println("AsyncProducer closed")
 	}()
 
+	parId := 0
 producerLoop:
 	for {
+		if parId == 0 {
+			parId++
+			fmt.Println("Partition Id", parId)
+		} else {
+			parId = 0
+			fmt.Println("Partition Id", parId)
 
+		}
 		value := fmt.Sprintf("Message-%d", i)
-		message := sarama.ProducerMessage{Topic: topic, Value: sarama.StringEncoder(value)}
+		message := sarama.ProducerMessage{Topic: topic, Partition: int32(parId), Value: sarama.StringEncoder(value)}
 
 		partition, offset, err := producer.SendMessage(&message)
 		if err != nil {

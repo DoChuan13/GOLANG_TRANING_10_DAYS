@@ -15,6 +15,7 @@ type KafkaDB struct {
 type EndPoint struct {
 	SqlPath   string
 	LocalPath string
+	DBLtd     int
 	Endpoint  string
 	DBName    string
 }

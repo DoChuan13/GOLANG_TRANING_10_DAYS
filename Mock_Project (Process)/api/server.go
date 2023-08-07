@@ -20,7 +20,7 @@ type Server struct {
 	infra *infrastructure.Infra
 	cfg   *model.Server
 	cond  sync.Cond
-	ltdDB chan bool
+	DBLtd chan bool
 }
 
 // New create new server instance
@@ -29,7 +29,7 @@ func New(infra *infrastructure.Infra, cfg *model.Server) *Server {
 		infra: infra,
 		cfg:   cfg,
 		cond:  sync.Cond{},
-		ltdDB: make(chan bool, 200),
+		DBLtd: make(chan bool, cfg.DBLtd),
 	}
 }
 
@@ -84,10 +84,10 @@ func (s *Server) Start(ctx context.Context) error {
 	for isContinue {
 		select {
 		case objectProcess := <-consumerCh:
-			s.ltdDB <- true
+			s.DBLtd <- true
 			counter += len(objectProcess.Records)
 			s.cond.L.Lock()
-			if len(s.ltdDB) == cap(s.ltdDB) {
+			if len(s.DBLtd) == cap(s.DBLtd) {
 				s.cond.Wait()
 			}
 			wg.Add(1)
@@ -121,7 +121,7 @@ func (s *Server) processDatabase(ctx context.Context, objectProcess *model.Consu
 		return
 	}
 	//fmt.Println("Saved Table =>", objectProcess.TableName)
-	<-s.ltdDB
+	<-s.DBLtd
 	s.cond.Signal()
 }
 

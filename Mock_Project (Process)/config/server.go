@@ -16,6 +16,7 @@ func InitConfig() (*model.Server, error) {
 	config.LocalPath = "/Users/Chuan/Personal/Docker/Bitnami/sqldump/temp/"
 	config.Endpoint = "127.0.0.1"
 	config.DBName = "demo"
+	config.DBLtd = 200
 
 	//Config Database
 	config.User = "root"

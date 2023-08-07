@@ -22,7 +22,7 @@ func main() {
 
 	bootstrapServers := strings.Split(util.GetEnv(util.BootstrapServers, "localhost:9093"), ",")
 	topic := util.GetEnv(util.Topic, "my-topic")
-	partition, _ := strconv.Atoi(util.GetEnv(util.Partition, strconv.Itoa(0)))
+	partition, _ := strconv.Atoi(util.GetEnv(util.Partition, strconv.Itoa(1)))
 
 	//cfg := sarama.NewConfig()
 
@@ -33,11 +33,11 @@ func main() {
 	}()
 
 	//admin, err := sarama.NewClusterAdmin(bootstrapServers, nil)
-	//admin.CreateTopic()
+	////admin.CreateTopic()
 	//topics, err := admin.ListTopics()
 	//_, exist := topics["my-topic"]
 	//fmt.Println("Exist==>", exist)
-
+	//
 	//time.Sleep(2 * time.Second)
 
 	consumer, err := sarama.NewConsumer(bootstrapServers, nil)
