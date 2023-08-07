@@ -29,7 +29,7 @@ func New(infra *infrastructure.Infra, cfg *model.Server) *Server {
 		infra: infra,
 		cfg:   cfg,
 		cond:  sync.Cond{},
-		ltdDB: make(chan bool, 400),
+		ltdDB: make(chan bool, 200),
 	}
 }
 
@@ -66,17 +66,17 @@ func (s *Server) Start(ctx context.Context) error {
 	//Load Database Repository
 	dbRepository := repository.NewDBRepository(s.infra, s.cfg)
 
-	//Start Kafka Service & Process
+	//Start Kafka Service
 	pkg.LogStepProcess(startTime, "Step 2: Kafka Process Started")
 	kafkaService := kafka_process.NewKafkaService(startTime, s.cfg, &kafkaRepository)
+	//Start Database Service
+	dbService := insert_data.NewDBService(s.cfg, &dbRepository)
+
 	var consumerCh = make(chan model.ConsumerObject)
 	var done = make(chan bool, 1)
 	go func() {
 		err = kafkaService.StartKafkaProcess(consumerCh, done, rows)
 	}()
-
-	//Start Database Service & Process
-	dbService := insert_data.NewDBService(s.cfg, &dbRepository)
 
 	isContinue := true
 	counter := 0

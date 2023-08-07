@@ -7,7 +7,7 @@ func InitConfig() (*model.Server, error) {
 	//Config Kafka
 	config.Broker = []string{"127.0.0.1:9093"}
 	config.Topics = map[string]int{}
-	config.MaxPartition = 2
+	config.MaxPartition = 1
 	config.Block = 1000
 
 	//Config End Point
@@ -28,7 +28,7 @@ func InitConfig() (*model.Server, error) {
 	config.RetryWaitMs = 5000
 
 	//Goroutine
-	config.ConsumerLtd = 500
+	config.ConsumerLtd = 200
 	config.ProducerLtd = 200000
 	return config, nil
 }
